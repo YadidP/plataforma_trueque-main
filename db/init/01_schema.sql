@@ -7,8 +7,21 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(100) NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  role VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (role IN ('usuario','emprendedor','ong','admin')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  role VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (role IN ('usuario','emprendedor','admin')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+CREATE TABLE IF NOT EXISTS entrepreneur_profiles (
+   id SERIAL PRIMARY KEY,
+   user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+   business_name VARCHAR(200) NOT NULL,
+   validation_status VARCHAR(20) DEFAULT 'pendiente' CHECK (validation_status IN ('pendiente','validado','rechazado')),
+   tax_id VARCHAR(50),
+   phone VARCHAR(30),
+   description TEXT,
+   created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS wallets (
