@@ -20,7 +20,22 @@ export class CreateListingDto {
   @ApiProperty()
   @IsNumberString()
   @IsNotEmpty()
+  subcategoryId: string; // New field
+
+  @ApiProperty()
+  @IsNumberString()
+  @IsNotEmpty()
+  materialId: string; // New field
+
+  @ApiProperty()
+  @IsNumberString()
+  @IsNotEmpty()
   unitCredits: string;
+
+  @ApiProperty()
+  @IsNumberString() // Quantity can be a number string
+  @IsNotEmpty()
+  quantity: string; // New field
 
   @ApiProperty()
   @IsString()

@@ -29,7 +29,23 @@ export interface CreditMovement {
 export interface Category {
   id: number;
   name: string;
-  co2Factor: number;
+}
+
+export interface Subcategory {
+  id: number;
+  name: string;
+  categoryId: number;
+}
+
+export interface Material {
+  id: number;
+  name: string;
+}
+
+export interface ImpactMetricResult {
+  code: string;
+  value: number;
+  unit: string;
 }
 
 export enum ListingStatus {

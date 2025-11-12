@@ -10,3 +10,5 @@ export * from './impact-daily.entity';
 export * from './credit-package.dto';
 export * from './subcategory.entity';
 export * from './material.entity';
+export * from './impact-equivalence.entity';
+export * from './impact-metric.entity';

@@ -1,6 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { User } from './user.entity';
 import { Category } from './category.entity';
+import { Subcategory } from './subcategory.entity'; // Import Subcategory
+import { Material } from './material.entity'; // Import Material
 import { ListingStatus } from '../common/enums';
 
 @Entity('listings')
@@ -21,6 +23,17 @@ export class Listing {
   @Index()
   @Column({ name: 'category_id' })
   categoryId: number;
+
+  @Index()
+  @Column({ name: 'subcategory_id' }) // New field
+  subcategoryId: number;
+
+  @Index()
+  @Column({ name: 'material_id' }) // New field
+  materialId: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2 }) // New field
+  quantity: number;
 
   @Column({ name: 'unit_credits', type: 'numeric', precision: 10, scale: 2 })
   unitCredits: number;
@@ -45,4 +58,12 @@ export class Listing {
   @ManyToOne(() => Category)
   @JoinColumn({ name: 'category_id' })
   category: Category;
+
+  @ManyToOne(() => Subcategory) // New relationship
+  @JoinColumn({ name: 'subcategory_id' })
+  subcategory: Subcategory;
+
+  @ManyToOne(() => Material) // New relationship
+  @JoinColumn({ name: 'material_id' })
+  material: Material;
 }

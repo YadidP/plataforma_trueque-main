@@ -18,7 +18,10 @@ export class ListingsService {
       imageUrl,
       // TypeORM can handle converting string numbers from DTO to number type
       categoryId: Number(createListingDto.categoryId),
+      subcategoryId: Number(createListingDto.subcategoryId), // New field
+      materialId: Number(createListingDto.materialId), // New field
       unitCredits: Number(createListingDto.unitCredits),
+      quantity: Number(createListingDto.quantity), // New field
     });
     return this.listingsRepository.save(listing);
   }

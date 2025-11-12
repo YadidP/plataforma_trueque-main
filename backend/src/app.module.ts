@@ -15,6 +15,7 @@ import { FilesModule } from './files/files.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { SubcategoriesModule } from './subcategories/subcategories.module';
+import { ImpactModule } from './impact/impact.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { SubcategoriesModule } from './subcategories/subcategories.module';
     AdminModule,
     FilesModule,
     SubcategoriesModule,
+    ImpactModule,
   ],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
 import http from './http';
 import {
-  User, Wallet, ImpactMetrics, Exchange, Listing, Category, CreditMovement, CreditPackage
+  User, Wallet, ImpactMetrics, Exchange, Listing, Category, CreditMovement, CreditPackage, Subcategory, Material, ImpactMetricResult
 } from '../types';
 
 // --- AUTH ---
@@ -72,6 +72,16 @@ export const getCategories = async (): Promise<Category[]> => {
   return response.data;
 };
 
+export const getSubcategoriesByCategoryId = async (categoryId: number): Promise<Subcategory[]> => {
+  const response = await http.get(`/subcategories/by-category/${categoryId}`);
+  return response.data;
+};
+
+export const getMaterials = async (): Promise<Material[]> => {
+  const response = await http.get('/materials'); // Assuming a /materials endpoint
+  return response.data;
+};
+
 export const getCategoryById = async (id: number): Promise<Category | undefined> => {
     const response = await http.get(`/categories/${id}`);
     return response.data;
@@ -99,4 +109,9 @@ export const getMyExchanges = async (): Promise<Exchange[]> => {
 export const getImpactMetrics = async (): Promise<ImpactMetrics> => {
     const response = await http.get('/reports/my-impact');
     return response.data;
+};
+
+export const postImpactPreview = async (data: { material_id: number; quantity: number; quantity_unit: string }): Promise<ImpactMetricResult[]> => {
+  const response = await http.post('/impact/preview', data);
+  return response.data;
 };
