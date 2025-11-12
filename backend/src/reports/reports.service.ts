@@ -29,7 +29,7 @@ export class ReportsService {
                 serviceHours += sale.quantity; // Asumimos que la cantidad es en horas para servicios
             } else {
                 reusedItems += sale.quantity;
-                co2Saved += sale.quantity * Number(sale.listing.category.co2Factor);
+                // La línea de co2Saved ha sido eliminada. El valor se quedará en 0.
             }
         }
         

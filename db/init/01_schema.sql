@@ -33,8 +33,7 @@ CREATE TABLE IF NOT EXISTS wallets (
 
 CREATE TABLE IF NOT EXISTS categories (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(50) UNIQUE NOT NULL,
-  co2_factor NUMERIC(10,2) NOT NULL DEFAULT 0
+  name VARCHAR(100) UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS listings (
@@ -103,4 +102,41 @@ CREATE TABLE IF NOT EXISTS impact_daily (
   reused_items INT NOT NULL DEFAULT 0,
   co2_saved_kg NUMERIC(10,2) NOT NULL DEFAULT 0.00,
   service_hours NUMERIC(10,2) NOT NULL DEFAULT 0.00
+);
+
+CREATE TABLE IF NOT EXISTS subcategories (
+ id SERIAL PRIMARY KEY,
+ category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+ name VARCHAR(100) NOT NULL,
+ UNIQUE(category_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS materials (
+ id SERIAL PRIMARY KEY,
+ name VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS subcategory_materials (
+ id SERIAL PRIMARY KEY,
+ subcategory_id INTEGER REFERENCES subcategories(id) ON DELETE CASCADE,
+ material_id INTEGER REFERENCES materials(id),
+ UNIQUE(subcategory_id, material_id)
+);
+
+CREATE TABLE IF NOT EXISTS impact_metrics (
+ id SERIAL PRIMARY KEY,
+ code VARCHAR(20) UNIQUE NOT NULL,
+ name VARCHAR(100) NOT NULL,
+ unit VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS impact_equivalences (
+ id SERIAL PRIMARY KEY,
+ material_id INTEGER REFERENCES materials(id) ON DELETE CASCADE,
+ metric_id INTEGER REFERENCES impact_metrics(id) ON DELETE CASCADE,
+ base_quantity NUMERIC NOT NULL,
+ base_unit VARCHAR(50),
+ impact_value NUMERIC NOT NULL,
+ source_reference TEXT,
+ UNIQUE(material_id, metric_id, base_unit)
 );

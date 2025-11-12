@@ -8,3 +8,5 @@ export * from './credit-log.entity';
 export * from './exchange-log.entity';
 export * from './impact-daily.entity';
 export * from './credit-package.dto';
+export * from './subcategory.entity';
+export * from './material.entity';

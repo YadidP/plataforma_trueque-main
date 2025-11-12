@@ -10,6 +10,10 @@ export class CategoriesService {
     private categoriesRepository: Repository<Category>,
   ) {}
 
+  findAllWithSubcategories() {
+    return this.categoriesRepository.find({ relations: ['subcategories'] });
+  }
+
   findAll() {
     return this.categoriesRepository.find();
   }

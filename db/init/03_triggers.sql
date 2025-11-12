@@ -35,30 +35,28 @@ FOR EACH ROW EXECUTE FUNCTION trg_incentivo_publicacion();
 CREATE OR REPLACE FUNCTION trg_impacto_intercambio()
 RETURNS TRIGGER AS $$
 DECLARE
-  v_cat_id INT;
   v_is_service BOOLEAN;
-  v_factor NUMERIC;
   v_date DATE := (NEW.exchange_date AT TIME ZONE 'UTC')::date;
 BEGIN
-  -- Categoría y factor
-  SELECT p.category_id, (LOWER(c.name) = 'servicios'), c.co2_factor
-    INTO v_cat_id, v_is_service, v_factor
+  -- Verificar si es servicio (sin leer co2_factor)
+  SELECT (LOWER(c.name) = 'servicios')
+    INTO v_is_service
   FROM listings p
   JOIN categories c ON c.id = p.category_id
   WHERE p.id = NEW.listing_id;
 
   IF v_is_service THEN
-    -- opcional: sumar horas de servicio
     INSERT INTO impact_daily (impact_date, service_hours)
     VALUES (v_date, NEW.quantity)
     ON CONFLICT (impact_date) DO UPDATE
       SET service_hours = impact_daily.service_hours + EXCLUDED.service_hours;
   ELSE
+    -- Ya no calculamos el CO2, solo los items reutilizados
     INSERT INTO impact_daily (impact_date, reused_items, co2_saved_kg)
-    VALUES (v_date, NEW.quantity, NEW.quantity * COALESCE(v_factor,0))
+    VALUES (v_date, NEW.quantity, 0.00) -- <-- CO2 guardado se establece en 0
     ON CONFLICT (impact_date) DO UPDATE
       SET reused_items = impact_daily.reused_items + EXCLUDED.reused_items,
-          co2_saved_kg = impact_daily.co2_saved_kg + EXCLUDED.co2_saved_kg;
+          co2_saved_kg = impact_daily.co2_saved_kg + 0; -- No se suma nada
   END IF;
 
   RETURN NEW;

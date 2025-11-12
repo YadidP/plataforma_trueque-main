@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Subcategory } from './subcategory.entity';
 
 @Entity('categories')
 export class Category {
@@ -8,6 +9,6 @@ export class Category {
   @Column({ length: 50, unique: true })
   name: string;
 
-  @Column({ name: 'co2_factor', type: 'numeric', precision: 10, scale: 2 })
-  co2Factor: number;
+  @OneToMany(() => Subcategory, subcategory => subcategory.category)
+  subcategories: Subcategory[];
 }
