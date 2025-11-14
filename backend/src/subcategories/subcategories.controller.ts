@@ -7,6 +7,11 @@ import { ApiTags } from '@nestjs/swagger';
 export class SubcategoriesController {
   constructor(private readonly subcategoriesService: SubcategoriesService) {}
 
+  @Get('by-category/:categoryId')
+  findByCategory(@Param('categoryId') categoryId: string) {
+    return this.subcategoriesService.findByCategoryId(+categoryId);
+  }
+
   @Get(':id/materials')
   findMaterials(@Param('id') id: string) {
     return this.subcategoriesService.findMaterialsBySubcategoryId(+id);

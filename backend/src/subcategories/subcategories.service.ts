@@ -10,6 +10,12 @@ export class SubcategoriesService {
     private subcategoriesRepository: Repository<Subcategory>,
   ) {}
 
+  async findByCategoryId(categoryId: number): Promise<Subcategory[]> {
+    return this.subcategoriesRepository.find({
+      where: { category: { id: categoryId } },
+    });
+  }
+
   async findMaterialsBySubcategoryId(id: number) {
     const subcategory = await this.subcategoriesRepository.findOne({
       where: { id },
