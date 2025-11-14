@@ -22,6 +22,11 @@ export class ReportsService {
         let reusedItems = 0;
         let co2Saved = 0;
         let serviceHours = 0;
+        
+        // Métricas adicionales inicializadas en 0
+        let waterSaved = 0;
+        let energySaved = 0;
+        let wastePrevented = 0;
 
         for (const sale of sales) {
             const isService = sale.listing.category.name.toLowerCase() === 'servicios';
@@ -30,6 +35,9 @@ export class ReportsService {
             } else {
                 reusedItems += sale.quantity;
                 // La línea de co2Saved ha sido eliminada. El valor se quedará en 0.
+                
+                // Aquí podrías añadir lógica futura para calcular las otras métricas
+                // Por ahora, las dejamos en 0.
             }
         }
         
@@ -37,6 +45,13 @@ export class ReportsService {
             reusedItems,
             co2Saved,
             serviceHours,
+            waterSaved,
+            waterUnit: 'litros',
+            energySaved,
+            energyUnit: 'kWh',
+            wastePrevented,
+            wasteUnit: 'kg',
+            co2Unit: 'kg', // Asegúrate de incluir también las unidades
         };
     }
 }

@@ -107,75 +107,95 @@ INSERT INTO materials (name) VALUES
 ('Componentes Electrónicos')
 ON CONFLICT (name) DO NOTHING;
 
--- Insertar Métricas de Impacto
+-- Insertar Métricas de Impacto - ROBUSTAS Y BIEN CALIBRADAS
 INSERT INTO impact_metrics (code, name, unit) VALUES
 ('CO2', 'Dióxido de Carbono', 'kg'),
 ('WATER', 'Agua', 'L'),
-('PESTICIDES', 'Pesticidas', 'kg'),
-('PLASTIC_WASTE', 'Residuos Plásticos', 'kg')
+('ENERGY', 'Energía', 'kWh'),
+('WASTE', 'Residuos Evitados', 'kg'),
+('PESTICIDES', 'Pesticidas', 'g')
 ON CONFLICT (code) DO NOTHING;
 
--- Insertar Equivalencias de Impacto (ejemplos realistas)
--- Plástico
+-- Insertar Equivalencias de Impacto (ejemplos realistas y optimistas para fomentar intercambios)
+-- Plástico: Muy impactante, reutilización es muy valiosa
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Plástico'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 1.5, 'Fuente: Estudio de ciclo de vida de plásticos'),
-((SELECT id FROM materials WHERE name = 'Plástico'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 10, 'Fuente: Estudio de ciclo de vida de plásticos'),
-((SELECT id FROM materials WHERE name = 'Plástico'), (SELECT id FROM impact_metrics WHERE code = 'PLASTIC_WASTE'), 1, 'unidad', 0.1, 'Fuente: Estimación de peso promedio de un envase plástico')
+((SELECT id FROM materials WHERE name = 'Plástico'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 3.5, 'Fuente: Estudio de ciclo de vida de plásticos - Producción y transporte'),
+((SELECT id FROM materials WHERE name = 'Plástico'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 100, 'Fuente: Agua para refinería de petróleo'),
+((SELECT id FROM materials WHERE name = 'Plástico'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 80, 'Fuente: Energía de producción (en MJ convertido a kWh)'),
+((SELECT id FROM materials WHERE name = 'Plástico'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Residuo completamente evitado')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Metal (ej: Aluminio)
+-- Metal: Alto impacto energético, especialmente aluminio
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Metal'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 10, 'Fuente: Producción de aluminio reciclado'),
-((SELECT id FROM materials WHERE name = 'Metal'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 50, 'Fuente: Producción de aluminio reciclado')
+((SELECT id FROM materials WHERE name = 'Metal'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 12, 'Fuente: Producción de aluminio reciclado vs nuevo'),
+((SELECT id FROM materials WHERE name = 'Metal'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 200, 'Fuente: Refinerías de metal'),
+((SELECT id FROM materials WHERE name = 'Metal'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 10, 'Fuente: Energía de refinería'),
+((SELECT id FROM materials WHERE name = 'Metal'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Metal reutilizable totalmente')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Madera
+-- Madera: Bajo impacto si es sostenible
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Madera'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 0.5, 'Fuente: Madera sostenible'),
-((SELECT id FROM materials WHERE name = 'Madera'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 20, 'Fuente: Cultivo de árboles')
+((SELECT id FROM materials WHERE name = 'Madera'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 0.3, 'Fuente: Madera sostenible (carbono secuestrado)'),
+((SELECT id FROM materials WHERE name = 'Madera'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 30, 'Fuente: Agua de crecimiento de árbol'),
+((SELECT id FROM materials WHERE name = 'Madera'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 0.5, 'kg', 2, 'Fuente: Energía mínima de procesamiento'),
+((SELECT id FROM materials WHERE name = 'Madera'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Madera completamente reciclable/biodegradable')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Tela (Algodón)
+-- Tela (Algodón): Alto impacto en agua y pesticidas
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 6, 'Fuente: Producción de algodón'),
-((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 10000, 'Fuente: Cultivo de algodón intensivo'),
-((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'PESTICIDES'), 1, 'kg', 0.1, 'Fuente: Uso de pesticidas en algodón')
+((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 5, 'Fuente: Producción y transporte de algodón'),
+((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 7500, 'Fuente: Cultivo intensivo de algodón (muy thirsty)'),
+((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 12, 'Fuente: Procesamiento y teñido'),
+((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Ropa completamente evitada en basura'),
+((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'PESTICIDES'), 1, 'kg', 8, 'Fuente: Pesticidas en cultivo de algodón convencional (en g)')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Papel
+-- Papel: Moderado, especialmente si es reciclado
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Papel'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 1.2, 'Fuente: Producción de papel reciclado'),
-((SELECT id FROM materials WHERE name = 'Papel'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 50, 'Fuente: Producción de papel reciclado')
+((SELECT id FROM materials WHERE name = 'Papel'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 1.5, 'Fuente: Producción de papel reciclado'),
+((SELECT id FROM materials WHERE name = 'Papel'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 80, 'Fuente: Tratamiento de agua en fábricas'),
+((SELECT id FROM materials WHERE name = 'Papel'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 4, 'Fuente: Producción de papel'),
+((SELECT id FROM materials WHERE name = 'Papel'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Papel biodegradable completamente')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Vidrio
+-- Vidrio: Bajo impacto si es reciclado
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Vidrio'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 0.3, 'Fuente: Producción de vidrio reciclado'),
-((SELECT id FROM materials WHERE name = 'Vidrio'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 5, 'Fuente: Producción de vidrio reciclado')
+((SELECT id FROM materials WHERE name = 'Vidrio'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 0.5, 'Fuente: Producción de vidrio reciclado'),
+((SELECT id FROM materials WHERE name = 'Vidrio'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 10, 'Fuente: Enfriamiento en fábricas'),
+((SELECT id FROM materials WHERE name = 'Vidrio'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 1.5, 'Fuente: Fusión de vidrio reciclado'),
+((SELECT id FROM materials WHERE name = 'Vidrio'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Vidrio 100% reciclable indefinidamente')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Cerámica
+-- Cerámica: Bajo impacto
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Cerámica'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 2, 'Fuente: Producción de cerámica'),
-((SELECT id FROM materials WHERE name = 'Cerámica'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 15, 'Fuente: Producción de cerámica')
+((SELECT id FROM materials WHERE name = 'Cerámica'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 1.2, 'Fuente: Cocción de cerámica'),
+((SELECT id FROM materials WHERE name = 'Cerámica'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 20, 'Fuente: Procesamiento'),
+((SELECT id FROM materials WHERE name = 'Cerámica'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 3, 'Fuente: Cocción en horno'),
+((SELECT id FROM materials WHERE name = 'Cerámica'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Cerámica biodegradable')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Cuero
+-- Cuero: Muy alto impacto (animal y químicos)
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Cuero'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 17, 'Fuente: Producción de cuero'),
-((SELECT id FROM materials WHERE name = 'Cuero'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 17000, 'Fuente: Producción de cuero')
+((SELECT id FROM materials WHERE name = 'Cuero'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 25, 'Fuente: Ganado y transporte'),
+((SELECT id FROM materials WHERE name = 'Cuero'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 20000, 'Fuente: Crianza de ganado'),
+((SELECT id FROM materials WHERE name = 'Cuero'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 15, 'Fuente: Curtido y procesamiento'),
+((SELECT id FROM materials WHERE name = 'Cuero'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Evitar nuevo cuero')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Goma
+-- Goma: Moderado-Alto
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Goma'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 3, 'Fuente: Producción de goma'),
-((SELECT id FROM materials WHERE name = 'Goma'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 30, 'Fuente: Producción de goma')
+((SELECT id FROM materials WHERE name = 'Goma'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 4, 'Fuente: Producción de goma'),
+((SELECT id FROM materials WHERE name = 'Goma'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 150, 'Fuente: Plantaciones de caucho'),
+((SELECT id FROM materials WHERE name = 'Goma'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 8, 'Fuente: Vulcanización'),
+((SELECT id FROM materials WHERE name = 'Goma'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 1, 'kg', 1.0, 'Fuente: Goma reutilizable')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
--- Componentes Electrónicos (ejemplo genérico)
+-- Componentes Electrónicos: Muy alto impacto
 INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value, source_reference) VALUES
-((SELECT id FROM materials WHERE name = 'Componentes Electrónicos'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'unidad', 0.5, 'Fuente: Estimación de impacto por componente'),
-((SELECT id FROM materials WHERE name = 'Componentes Electrónicos'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'unidad', 5, 'Fuente: Estimación de impacto por componente')
+((SELECT id FROM materials WHERE name = 'Componentes Electrónicos'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 15, 'Fuente: Manufactura electrónica'),
+((SELECT id FROM materials WHERE name = 'Componentes Electrónicos'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 300, 'Fuente: Fábricas semiconductoras'),
+((SELECT id FROM materials WHERE name = 'Componentes Electrónicos'), (SELECT id FROM impact_metrics WHERE code = 'ENERGY'), 1, 'kg', 50, 'Fuente: Industria electrónica muy intensiva'),
+((SELECT id FROM materials WHERE name = 'Componentes Electrónicos'), (SELECT id FROM impact_metrics WHERE code = 'WASTE'), 0.5, 'kg', 1.0, 'Fuente: Evitar e-waste tóxico')
 ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
 
 

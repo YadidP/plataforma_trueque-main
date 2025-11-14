@@ -13,15 +13,17 @@ export class ListingsService {
 
   async create(createListingDto: CreateListingDto, authorId: number, imageUrl: string) {
     const listing = this.listingsRepository.create({
-      ...createListingDto,
+      title: createListingDto.title,
+      description: createListingDto.description,
       authorId,
       imageUrl,
-      // TypeORM can handle converting string numbers from DTO to number type
       categoryId: Number(createListingDto.categoryId),
-      subcategoryId: Number(createListingDto.subcategoryId), // New field
-      materialId: Number(createListingDto.materialId), // New field
+      subcategoryId: Number(createListingDto.subcategoryId),
+      materialId: createListingDto.materialId ? Number(createListingDto.materialId) : undefined,
       unitCredits: Number(createListingDto.unitCredits),
-      quantity: Number(createListingDto.quantity), // New field
+      quantity: createListingDto.quantity ? Number(createListingDto.quantity) : undefined,
+      quantityRange: createListingDto.quantityRange,
+      unitLabel: createListingDto.unitLabel,
     });
     return this.listingsRepository.save(listing);
   }

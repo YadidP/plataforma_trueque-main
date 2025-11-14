@@ -9,6 +9,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+  // Prefijo global para todas las rutas
+  app.setGlobalPrefix('api');
+
   // Seguridad
   app.enableCors({
     origin: configService.get('CORS_ORIGIN'),

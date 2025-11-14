@@ -29,17 +29,20 @@ export class Listing {
   subcategoryId: number;
 
   @Index()
-  @Column({ name: 'material_id' }) // New field
-  materialId: number;
+  @Column({ name: 'material_id', nullable: true }) // New field - OPTIONAL
+  materialId?: number;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2 }) // New field
-  quantity: number;
+  @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true }) // New field - OPTIONAL
+  quantity?: number;
+
+  @Column({ name: 'quantity_range', length: 50, nullable: true }) // New field for ranges
+  quantityRange?: string;
 
   @Column({ name: 'unit_credits', type: 'numeric', precision: 10, scale: 2 })
   unitCredits: number;
 
-  @Column({ name: 'unit_label', length: 50 })
-  unitLabel: string;
+  @Column({ name: 'unit_label', length: 50, nullable: true }) // OPTIONAL
+  unitLabel?: string;
 
   @Column({ name: 'image_url', length: 255, nullable: true })
   imageUrl: string;
@@ -65,5 +68,5 @@ export class Listing {
 
   @ManyToOne(() => Material) // New relationship
   @JoinColumn({ name: 'material_id' })
-  material: Material;
+  material?: Material;
 }

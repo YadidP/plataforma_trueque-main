@@ -19,7 +19,7 @@ export class ImpactService {
     const { material_id, quantity, quantity_unit } = impactDto;
 
     const equivalences = await this.impactEquivalenceRepository.find({
-      where: { material: { id: material_id }, baseUnit: quantity_unit },
+      where: { materialId: material_id, baseUnit: quantity_unit },
       relations: ['metric'],
     });
 
@@ -28,9 +28,14 @@ export class ImpactService {
     }
 
     return equivalences.map(eq => ({
+      code: eq.metric.code,
       metric: eq.metric.name,
       unit: eq.metric.unit,
-      value: (quantity / eq.baseQuantity) * eq.impactValue,
-    }));
+      value: parseFloat(((quantity / parseFloat(eq.baseQuantity.toString())) * parseFloat(eq.impactValue.toString())).toFixed(2)),
+    })).sort((a, b) => {
+      // Ordenar: CO2, WATER, ENERGY, WASTE, PESTICIDES
+      const order = { 'CO2': 0, 'WATER': 1, 'ENERGY': 2, 'WASTE': 3, 'PESTICIDES': 4 };
+      return (order[a.code] ?? 99) - (order[b.code] ?? 99);
+    });
   }
 }

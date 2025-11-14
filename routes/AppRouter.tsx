@@ -36,20 +36,25 @@ const AppRouter = () => {
         <Route index element={<LandingPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        
+        {/* Rutas Protegidas para Usuarios Autenticados - DEBEN VENIR PRIMERO */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="listings/new" element={<CreateListingPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="wallet" element={<WalletPage />} />
+          <Route path="exchanges" element={<ExchangesPage />} />
+        </Route>
+
+        {/* Rutas Públicas - DESPUÉS DE LAS DINÁMICAS PROTEGIDAS */}
         <Route path="listings" element={<ListingsPage />} />
         <Route path="listings/:id" element={<ListingDetailPage />} />
         
-        <Route element={<ProtectedRoute />}>
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="listings/new" element={<CreateListingPage />} />
-            <Route path="wallet" element={<WalletPage />} />
-            <Route path="exchanges" element={<ExchangesPage />} />
-        </Route>
-
+        {/* Rutas Protegidas para Administradores */}
         <Route element={<ProtectedRoute roles={[UserRole.ADMIN]} />}>
-            <Route path="admin" element={<AdminPage />} />
+          <Route path="admin" element={<AdminPage />} />
         </Route>
 
+        {/* 404 - Debe ser última */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

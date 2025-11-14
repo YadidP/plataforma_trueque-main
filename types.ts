@@ -54,6 +54,12 @@ export enum ListingStatus {
   PAUSED = 'pausada',
 }
 
+export interface QuantityRange {
+  label: string;
+  min: number;
+  max: number | null; // null means "más de"
+}
+
 export interface Listing {
   id: number;
   title: string;
@@ -61,6 +67,10 @@ export interface Listing {
   authorId: number;
   authorName: string;
   categoryId: number;
+  subcategoryId?: number;
+  materialId?: number;
+  quantity?: number;
+  quantityRange?: string; // e.g., "1-5"
   unitCredits: number;
   unitLabel: string;
   status: ListingStatus;
@@ -90,5 +100,18 @@ export interface CreditPackage {
 export interface ImpactMetrics {
     reusedItems: number;
     co2Saved: number;
+    co2Unit: string;
+    waterSaved: number;
+    waterUnit: string;
+    energySaved: number;
+    energyUnit: string;
+    wastePrevented: number;
+    wasteUnit: string;
     serviceHours: number;
+}
+
+export interface ImpactEquivalence {
+  metric: string;
+  equivalence: string;
+  value: number;
 }

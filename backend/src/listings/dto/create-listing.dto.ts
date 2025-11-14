@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumberString, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumberString, IsString, IsOptional } from 'class-validator';
 
 export class CreateListingDto {
   @ApiProperty()
@@ -24,8 +24,8 @@ export class CreateListingDto {
 
   @ApiProperty()
   @IsNumberString()
-  @IsNotEmpty()
-  materialId: string; // New field
+  @IsOptional()
+  materialId?: string; // New field - OPTIONAL
 
   @ApiProperty()
   @IsNumberString()
@@ -33,15 +33,20 @@ export class CreateListingDto {
   unitCredits: string;
 
   @ApiProperty()
-  @IsNumberString() // Quantity can be a number string
-  @IsNotEmpty()
-  quantity: string; // New field
+  @IsNumberString()
+  @IsOptional()
+  quantity?: string; // New field - OPTIONAL
 
   @ApiProperty()
   @IsString()
-  @IsNotEmpty()
-  unitLabel: string;
-  
+  @IsOptional()
+  quantityRange?: string; // e.g., "1-5", "5-10"
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  unitLabel?: string; // OPTIONAL
+
   @ApiProperty({ type: 'string', format: 'binary', required: true })
   imageFile: any;
 }
