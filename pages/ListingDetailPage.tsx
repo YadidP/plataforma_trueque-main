@@ -14,6 +14,7 @@ const ListingDetailPage = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [exchangeLoading, setExchangeLoading] = useState(false);
   const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { isAuthenticated, user } = useAuth();
   const { addNotification } = useNotification();
@@ -70,15 +71,67 @@ const ListingDetailPage = () => {
   };
 
   if (loading) return <Spinner />;
-  if (!listing) return <p className="text-center">Cargando publicación...</p>; // Evita renderizar contenido vacío mientras redirige
+  if (!listing) return <p className="text-center">Cargando publicación...</p>;
+
+  const images = listing.images && listing.images.length > 0 
+    ? listing.images 
+    : listing.imageUrl 
+    ? [{ imageUrl: listing.imageUrl } as any]
+    : [];
+
+  const currentImage = images[currentImageIndex];
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
 
   const isOwner = user?.id === listing.authorId;
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-          <img src={listing.imageUrl} alt={listing.title} className="w-full h-auto object-cover rounded-lg shadow-md" />
+        <div className="relative">
+          <img 
+            src={currentImage?.imageUrl} 
+            alt={listing.title} 
+            className="w-full h-auto object-cover rounded-lg shadow-md" 
+          />
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-60 text-white p-3 rounded-full hover:bg-opacity-80 transition-all"
+              >
+                ‹
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-60 text-white p-3 rounded-full hover:bg-opacity-80 transition-all"
+              >
+                ›
+              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-60 text-white px-4 py-2 rounded-full text-sm">
+                {currentImageIndex + 1}/{images.length}
+              </div>
+              <div className="flex gap-2 mt-4 flex-wrap">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`w-12 h-12 rounded border-2 overflow-hidden transition-all ${
+                      idx === currentImageIndex ? 'border-green-primary' : 'border-gray-300'
+                    }`}
+                  >
+                    <img src={img.imageUrl} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
         <div>
           <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">{categoryName}</span>

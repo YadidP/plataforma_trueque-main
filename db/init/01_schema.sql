@@ -95,6 +95,15 @@ CREATE INDEX IF NOT EXISTS idx_listings_subcategory_id ON listings(subcategory_i
 CREATE INDEX IF NOT EXISTS idx_listings_material_id ON listings(material_id);
 CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
 
+CREATE TABLE IF NOT EXISTS listing_images (
+  id SERIAL PRIMARY KEY,
+  listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  image_url VARCHAR(255) NOT NULL,
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_listing_images_listing_id ON listing_images(listing_id);
+
 CREATE TABLE IF NOT EXISTS exchanges (
   id BIGSERIAL PRIMARY KEY,
   listing_id INT NOT NULL REFERENCES listings(id),

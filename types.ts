@@ -60,6 +60,14 @@ export interface QuantityRange {
   max: number | null; // null means "más de"
 }
 
+export interface ListingImage {
+  id: number;
+  listingId: number;
+  imageUrl: string;
+  displayOrder: number;
+  createdAt: string;
+}
+
 export interface Listing {
   id: number;
   title: string;
@@ -75,6 +83,7 @@ export interface Listing {
   unitLabel: string;
   status: ListingStatus;
   imageUrl: string;
+  images?: ListingImage[];
   createdAt: string;
 }
 

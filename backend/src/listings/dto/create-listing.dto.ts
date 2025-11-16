@@ -20,12 +20,12 @@ export class CreateListingDto {
   @ApiProperty()
   @IsNumberString()
   @IsNotEmpty()
-  subcategoryId: string; // New field
+  subcategoryId: string;
 
   @ApiProperty()
   @IsNumberString()
   @IsOptional()
-  materialId?: string; // New field - OPTIONAL
+  materialId?: string;
 
   @ApiProperty()
   @IsNumberString()
@@ -35,18 +35,18 @@ export class CreateListingDto {
   @ApiProperty()
   @IsNumberString()
   @IsOptional()
-  quantity?: string; // New field - OPTIONAL
+  quantity?: string;
 
   @ApiProperty()
   @IsString()
   @IsOptional()
-  quantityRange?: string; // e.g., "1-5", "5-10"
+  quantityRange?: string;
 
   @ApiProperty()
   @IsString()
   @IsOptional()
-  unitLabel?: string; // OPTIONAL
+  unitLabel?: string;
 
-  @ApiProperty({ type: 'string', format: 'binary', required: true })
-  imageFile: any;
+  @ApiProperty({ type: 'string', format: 'binary', required: true, isArray: true })
+  imageFiles: any[];
 }

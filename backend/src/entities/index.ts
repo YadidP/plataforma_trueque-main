@@ -2,6 +2,7 @@ export * from './user.entity';
 export * from './wallet.entity';
 export * from './category.entity';
 export * from './listing.entity';
+export * from './listing-image.entity';
 export * from './exchange.entity';
 export * from './credit-purchase.entity';
 export * from './credit-log.entity';

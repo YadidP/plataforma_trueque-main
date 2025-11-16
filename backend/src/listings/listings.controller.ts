@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFiles, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { FilesService } from 'src/files/files.service';
 
 @ApiTags('listings')
@@ -17,30 +17,32 @@ export class ListingsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(FileInterceptor('imageFile'))
+  @UseInterceptors(FilesInterceptor('imageFiles', 10))
   @ApiConsumes('multipart/form-data')
   async create(
     @Body() createListingDto: CreateListingDto,
     @Req() req,
-    @UploadedFile(
+    @UploadedFiles(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }),
           new FileTypeValidator({ fileType: '.(png|jpeg|jpg)' }),
         ],
       }),
-    ) // FIX: Replaced Express.Multer.File with any due to missing Express types.
-    file: any,
-    ) {
-    const imageUrl = await this.filesService.saveFile(file);
-    return this.listingsService.create(createListingDto, req.user.id, imageUrl);
+    )
+    files: any[],
+  ) {
+    const imageUrls = await Promise.all(
+      files.map(file => this.filesService.saveFile(file))
+    );
+    return this.listingsService.create(createListingDto, req.user.id, imageUrls);
   }
 
   @Get()
   findAll() {
     return this.listingsService.findAll();
   }
-  
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('my-listings')

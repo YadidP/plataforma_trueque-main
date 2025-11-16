@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
 import { User } from './user.entity';
 import { Category } from './category.entity';
 import { Subcategory } from './subcategory.entity'; // Import Subcategory
 import { Material } from './material.entity'; // Import Material
+import { ListingImage } from './listing-image.entity';
 import { ListingStatus } from '../common/enums';
 
 @Entity('listings')
@@ -62,11 +63,14 @@ export class Listing {
   @JoinColumn({ name: 'category_id' })
   category: Category;
 
-  @ManyToOne(() => Subcategory) // New relationship
+  @ManyToOne(() => Subcategory)
   @JoinColumn({ name: 'subcategory_id' })
   subcategory: Subcategory;
 
-  @ManyToOne(() => Material) // New relationship
+  @ManyToOne(() => Material)
   @JoinColumn({ name: 'material_id' })
   material?: Material;
+
+  @OneToMany(() => ListingImage, (image) => image.listing, { cascade: true, eager: true })
+  images: ListingImage[];
 }

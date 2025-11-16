@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Listing } from 'src/entities';
+import { Listing, ListingImage } from 'src/entities';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -9,14 +9,16 @@ export class ListingsService {
   constructor(
     @InjectRepository(Listing)
     private listingsRepository: Repository<Listing>,
+    @InjectRepository(ListingImage)
+    private listingImagesRepository: Repository<ListingImage>,
   ) {}
 
-  async create(createListingDto: CreateListingDto, authorId: number, imageUrl: string) {
+  async create(createListingDto: CreateListingDto, authorId: number, imageUrls: string[]) {
     const listing = this.listingsRepository.create({
       title: createListingDto.title,
       description: createListingDto.description,
       authorId,
-      imageUrl,
+      imageUrl: imageUrls[0], // Keep first image as main for backward compatibility
       categoryId: Number(createListingDto.categoryId),
       subcategoryId: Number(createListingDto.subcategoryId),
       materialId: createListingDto.materialId ? Number(createListingDto.materialId) : undefined,
@@ -25,7 +27,21 @@ export class ListingsService {
       quantityRange: createListingDto.quantityRange,
       unitLabel: createListingDto.unitLabel,
     });
-    return this.listingsRepository.save(listing);
+
+    const savedListing = await this.listingsRepository.save(listing);
+
+    // Save all images
+    const images = imageUrls.map((url, index) =>
+      this.listingImagesRepository.create({
+        listingId: savedListing.id,
+        imageUrl: url,
+        displayOrder: index,
+      })
+    );
+    await this.listingImagesRepository.save(images);
+    savedListing.images = images;
+
+    return savedListing;
   }
 
   findAll() {

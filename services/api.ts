@@ -42,12 +42,21 @@ export const purchaseCredits = async (packageId: number, paymentRef: string): Pr
 
 
 // --- LISTINGS & CATEGORIES ---
+const getImageUrl = (relativePath: string) => {
+  const baseUrl = http.defaults.baseURL?.replace('/api', '') || 'http://localhost:3000';
+  return `${baseUrl}${relativePath}`;
+};
+
 export const getListings = async (): Promise<Listing[]> => {
   const response = await http.get('/listings');
-  // Construct full image URL
+  // Construct full image URLs
   return response.data.map(listing => ({
     ...listing,
-    imageUrl: `${http.defaults.baseURL}${listing.imageUrl}`
+    imageUrl: getImageUrl(listing.imageUrl),
+    images: listing.images?.map(img => ({
+      ...img,
+      imageUrl: getImageUrl(img.imageUrl)
+    }))
   }));
 };
 
@@ -55,7 +64,11 @@ export const getMyListings = async (): Promise<Listing[]> => {
     const response = await http.get('/listings/my-listings');
     return response.data.map(listing => ({
         ...listing,
-        imageUrl: `${http.defaults.baseURL}${listing.imageUrl}`
+        imageUrl: getImageUrl(listing.imageUrl),
+        images: listing.images?.map(img => ({
+          ...img,
+          imageUrl: getImageUrl(img.imageUrl)
+        }))
     }));
 };
 
@@ -63,7 +76,11 @@ export const getListingById = async (id: number): Promise<Listing> => {
     const response = await http.get(`/listings/${id}`);
     return {
         ...response.data,
-        imageUrl: `${http.defaults.baseURL}${response.data.imageUrl}`
+        imageUrl: getImageUrl(response.data.imageUrl),
+        images: response.data.images?.map(img => ({
+          ...img,
+          imageUrl: getImageUrl(img.imageUrl)
+        }))
     };
 };
 
