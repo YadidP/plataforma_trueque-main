@@ -211,3 +211,23 @@ INSERT INTO entrepreneur_profiles (user_id, business_name, validation_status)
 SELECT id, 'EcoTienda Andina', 'validado'
 FROM users WHERE email = 'emprendedor@eco.com'
 ON CONFLICT (user_id) DO NOTHING;
+-- db/init/04_seeds.sql (AÑADIR AL FINAL)
+
+-- Insertar Tipos de Suscripción
+INSERT INTO subscriptions (name, price_bs, duration_days, description) VALUES
+('Premium Mensual', 35.00, 30, 'Visibilidad mejorada y acceso a estadísticas.'),
+('Premium Trimestral', 90.00, 90, 'Ahorra un 15% con el plan trimestral.'),
+('Premium Anual', 300.00, 365, 'El mejor valor, ahorra un 30% anualmente.')
+ON CONFLICT (id) DO NOTHING;
+
+-- Asignar suscripción de ejemplo a un usuario
+INSERT INTO user_subscriptions (user_id, subscription_id, start_date, end_date, is_active)
+SELECT 
+    u.id, 
+    s.id, 
+    CURRENT_TIMESTAMP, 
+    CURRENT_TIMESTAMP + (s.duration_days * INTERVAL '1 day'), 
+    true
+FROM users u, subscriptions s
+WHERE u.email = 'emprendedor@eco.com' AND s.name = 'Premium Mensual'
+ON CONFLICT (id) DO NOTHING;

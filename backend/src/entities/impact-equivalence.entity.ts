@@ -21,15 +21,19 @@ export class ImpactEquivalence {
   @JoinColumn({ name: 'metric_id' })
   metric: ImpactMetric;
 
-  @Column({ type: 'numeric' })
+  // CORRECCIÓN: Mapeo explícito a snake_case
+  @Column({ name: 'base_quantity', type: 'numeric' })
   baseQuantity: number;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  // CORRECCIÓN: Mapeo explícito a snake_case
+  @Column({ name: 'base_unit', type: 'varchar', length: 50, nullable: true })
   baseUnit: string;
 
-  @Column({ type: 'numeric' })
+  // CORRECCIÓN: Mapeo explícito a snake_case
+  @Column({ name: 'impact_value', type: 'numeric' })
   impactValue: number;
 
-  @Column({ type: 'text', nullable: true })
+  // CORRECCIÓN: Mapeo explícito a snake_case
+  @Column({ name: 'source_reference', type: 'text', nullable: true })
   sourceReference: string;
 }

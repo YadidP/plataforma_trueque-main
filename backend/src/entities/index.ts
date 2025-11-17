@@ -13,3 +13,5 @@ export * from './subcategory.entity';
 export * from './material.entity';
 export * from './impact-equivalence.entity';
 export * from './impact-metric.entity';
+export * from './subscription.entity';
+export * from './user-subscription.entity';

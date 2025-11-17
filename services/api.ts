@@ -1,5 +1,5 @@
 import http from './http';
-import type { User, Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange } from '../types';
+import type { User, Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport } from '../types';
 
 // Helper to ensure full /uploads/ path and fallback
 const getImageUrl = (path: string | undefined): string => {
@@ -134,4 +134,20 @@ export const getImpactMetrics = async (): Promise<ImpactMetrics> => {
 export const postImpactPreview = async (data: { material_id: number; quantity: number; quantity_unit: string }): Promise<ImpactMetricResult[]> => {
   const response = await http.post('/impact/preview', data);
   return response.data;
+};
+
+// --- ADMIN REPORTS ---
+export const getUsersReport = async (): Promise<UserReport> => {
+    const response = await http.get('/reports/admin/users');
+    return response.data;
+};
+
+export const getMonetizationReport = async (): Promise<MonetizationReport> => {
+    const response = await http.get('/reports/admin/monetization');
+    return response.data;
+};
+
+export const getImpactReport = async (): Promise<ImpactReport> => {
+    const response = await http.get('/reports/admin/impact');
+    return response.data;
 };

@@ -1,4 +1,3 @@
-
 export enum UserRole {
   USER = 'usuario',
   ENTREPRENEUR = 'emprendedor',
@@ -123,4 +122,26 @@ export interface ImpactEquivalence {
   metric: string;
   equivalence: string;
   value: number;
+}
+
+// types.ts (AÑADIR AL FINAL)
+
+export interface UserReport {
+  totalUsers: number;
+  activeUsers: { role: string; count: number }[];
+  top10UsersByExchanges: { user_id: number; name: string; email: string; total_exchanges: number }[];
+  churnUsersCount: number;
+}
+
+export interface MonetizationReport {
+  totalRevenue: number;
+  revenueLast30Days: number;
+  creditSource: { source: string; amount: number }[];
+  activePremiumUsers: number;
+}
+
+export interface ImpactReport {
+  totalItemsExchanged: number;
+  exchangesByCategory: { categoryName: string; totalExchanges: number }[];
+  listingToExchangeRatioByCategory: { categoryName: string; ratio: number }[];
 }

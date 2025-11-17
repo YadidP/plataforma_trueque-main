@@ -24,6 +24,27 @@ CREATE TABLE IF NOT EXISTS entrepreneur_profiles (
    created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- NUEVA TABLA: Tipos de suscripción
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price_bs NUMERIC(10, 2) NOT NULL,
+    duration_days INTEGER NOT NULL,
+    description TEXT
+);
+
+-- NUEVA TABLA: Suscripciones de los usuarios
+CREATE TABLE IF NOT EXISTS user_subscriptions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    subscription_id INTEGER NOT NULL REFERENCES subscriptions(id),
+    start_date TIMESTAMPTZ NOT NULL DEFAULT now(),
+    end_date TIMESTAMPTZ NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+
+
 CREATE TABLE IF NOT EXISTS wallets (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
