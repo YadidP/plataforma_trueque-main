@@ -13,9 +13,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Seguridad
-  app.enableCors({
-    origin: configService.get('CORS_ORIGIN'),
-  });
+  // app.enableCors({
+  //   origin: configService.get('CORS_ORIGIN'),
+  // });
   app.use(helmet());
 
   // Pipes globales para validación automática

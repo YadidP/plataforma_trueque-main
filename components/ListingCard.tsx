@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Listing } from '../types';
@@ -31,20 +30,15 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <Link to={`/listings/${listing.id}`} className="relative group">
-        {currentImage?.imageUrl ? (
-          <img 
-            className="w-full h-48 object-cover" 
-            src={currentImage.imageUrl} 
-            alt={listing.title} 
-            onError={(e) => {
-              (e.target as any).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif" font-size="14"%3E{listing.title}%3C/text%3E%3C/svg%3E';
-            }}
-          />
-        ) : (
-          <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-            <span className="text-gray-500">Sin imagen</span>
-          </div>
-        )}
+        <img 
+          src={currentImage?.imageUrl}  // Uses mapped full path
+          alt={listing.title}
+          className="w-full h-48 object-cover"
+          onError={(e) => {
+            console.error(`Image error for listing ${listing.id}: src=${(e.target as HTMLImageElement).src}`);  // Log if fails
+            (e.target as HTMLImageElement).src = '/placeholder.jpg';  // Fallback only on error
+          }}
+        />
         {images.length > 1 && (
           <>
             <button

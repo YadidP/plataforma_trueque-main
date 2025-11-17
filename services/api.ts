@@ -1,7 +1,12 @@
 import http from './http';
-import {
-  User, Wallet, ImpactMetrics, Exchange, Listing, Category, CreditMovement, CreditPackage, Subcategory, Material, ImpactMetricResult
-} from '../types';
+import type { User, Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange } from '../types';
+
+// Helper to ensure full /uploads/ path and fallback
+const getImageUrl = (path: string | undefined): string => {
+  if (!path) return '/placeholder.jpg';
+  // The path from the DB should already be correct, e.g., /uploads/filename.ext
+  return path.startsWith('/') ? path : `/${path}`;
+};
 
 // --- AUTH ---
 export const login = async (email: string, password: string): Promise<{ accessToken: string }> => {
@@ -42,46 +47,44 @@ export const purchaseCredits = async (packageId: number, paymentRef: string): Pr
 
 
 // --- LISTINGS & CATEGORIES ---
-const getImageUrl = (relativePath: string) => {
-  const baseUrl = http.defaults.baseURL?.replace('/api', '') || 'http://localhost:3000';
-  return `${baseUrl}${relativePath}`;
-};
-
 export const getListings = async (): Promise<Listing[]> => {
   const response = await http.get('/listings');
-  // Construct full image URLs
-  return response.data.map(listing => ({
+  // CORRECCIÓN: Se usa `listing.imageUrl` (camelCase) en lugar de `listing.image_url`
+  return response.data.map((listing: any) => ({
     ...listing,
-    imageUrl: getImageUrl(listing.imageUrl),
-    images: listing.images?.map(img => ({
+    imageUrl: getImageUrl(listing.imageUrl || listing.images?.[0]?.imageUrl),
+    images: listing.images?.map((img: any) => ({
       ...img,
-      imageUrl: getImageUrl(img.imageUrl)
-    }))
+      imageUrl: getImageUrl(img.imageUrl),
+    })) || [],
   }));
 };
 
 export const getMyListings = async (): Promise<Listing[]> => {
-    const response = await http.get('/listings/my-listings');
-    return response.data.map(listing => ({
-        ...listing,
-        imageUrl: getImageUrl(listing.imageUrl),
-        images: listing.images?.map(img => ({
-          ...img,
-          imageUrl: getImageUrl(img.imageUrl)
-        }))
-    }));
+  const response = await http.get('/listings/my-listings');
+  // CORRECCIÓN: Se usa `listing.imageUrl` (camelCase) en lugar de `listing.image_url`
+  return response.data.map((listing: any) => ({
+    ...listing,
+    imageUrl: getImageUrl(listing.imageUrl || listing.images?.[0]?.imageUrl),
+    images: listing.images?.map((img: any) => ({
+      ...img,
+      imageUrl: getImageUrl(img.imageUrl),
+    })) || [],
+  }));
 };
 
 export const getListingById = async (id: number): Promise<Listing> => {
-    const response = await http.get(`/listings/${id}`);
-    return {
-        ...response.data,
-        imageUrl: getImageUrl(response.data.imageUrl),
-        images: response.data.images?.map(img => ({
-          ...img,
-          imageUrl: getImageUrl(img.imageUrl)
-        }))
-    };
+  const response = await http.get(`/listings/${id}`);
+  const listing = response.data;
+  // CORRECCIÓN: Se usa `listing.imageUrl` (camelCase) en lugar de `listing.image_url`
+  return {
+    ...listing,
+    imageUrl: getImageUrl(listing.imageUrl || listing.images?.[0]?.imageUrl),
+    images: listing.images?.map((img: any) => ({
+      ...img,
+      imageUrl: getImageUrl(img.imageUrl),
+    })) || [],
+  };
 };
 
 export const getCategories = async (): Promise<Category[]> => {
@@ -95,7 +98,7 @@ export const getSubcategoriesByCategoryId = async (categoryId: number): Promise<
 };
 
 export const getMaterials = async (): Promise<Material[]> => {
-  const response = await http.get('/materials'); // Assuming a /materials endpoint
+  const response = await http.get('/materials');
   return response.data;
 };
 

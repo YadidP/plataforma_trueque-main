@@ -1,17 +1,27 @@
-import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      // Proxy para API: Todo /api va al backend
+      '/api': {
+        target: 'http://backend:3000',  // CAMBIO: Usa nombre de servicio Docker
+        changeOrigin: true,  // Cambia origen para evitar CORS
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api')  // Mantiene /api
       },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
+      // Proxy para imágenes: Todo /uploads va al backend (ServeStaticModule)
+      '/uploads': {
+        target: 'http://backend:3000', // CAMBIO: Usa nombre de servicio Docker
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/uploads/, '/uploads')
+      },
+    },
+  },
 });

@@ -99,6 +99,10 @@ const ListingDetailPage = () => {
             src={currentImage?.imageUrl} 
             alt={listing.title} 
             className="w-full h-auto object-cover rounded-lg shadow-md" 
+            onError={(e) => {
+              console.error(`Image error for detail listing ${listing.id}: src=${(e.target as HTMLImageElement).src}`); // Log if fails
+              (e.target as HTMLImageElement).src = '/placeholder.jpg'; // Fallback if image fails to load
+            }}
           />
           {images.length > 1 && (
             <>
