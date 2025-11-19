@@ -124,24 +124,31 @@ export interface ImpactEquivalence {
   value: number;
 }
 
-// types.ts (AÑADIR AL FINAL)
-
+// New report interfaces
 export interface UserReport {
   totalUsers: number;
-  activeUsers: { role: string; count: number }[];
-  top10UsersByExchanges: { user_id: number; name: string; email: string; total_exchanges: number }[];
-  churnUsersCount: number;
+  newUsersInPeriod: number;
+  activeUsersInPeriod: number;
+  inactiveUsers: number;
 }
 
 export interface MonetizationReport {
-  totalRevenue: number;
-  revenueLast30Days: number;
-  creditSource: { source: string; amount: number }[];
-  activePremiumUsers: number;
+  revenueInPeriod: number;
+  exchangesInPeriod: number;
+  creditsPurchasedInPeriod: number;
+  creditsExchangedInPeriod: number;
 }
 
 export interface ImpactReport {
-  totalItemsExchanged: number;
-  exchangesByCategory: { categoryName: string; totalExchanges: number }[];
-  listingToExchangeRatioByCategory: { categoryName: string; ratio: number }[];
+  impactByCategory: {
+    categoryName: string;
+    itemsExchanged: number;
+  }[];
+}
+
+export interface ClaimsReport {
+    claimsByStatus: {
+        status: string;
+        count: number;
+    }[];
 }

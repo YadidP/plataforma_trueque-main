@@ -1,5 +1,5 @@
 import http from './http';
-import type { User, Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport } from '../types';
+import type { User, Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport, ClaimsReport } from '../types';
 
 // Helper to ensure full /uploads/ path and fallback
 const getImageUrl = (path: string | undefined): string => {
@@ -137,17 +137,28 @@ export const postImpactPreview = async (data: { material_id: number; quantity: n
 };
 
 // --- ADMIN REPORTS ---
-export const getUsersReport = async (): Promise<UserReport> => {
-    const response = await http.get('/reports/admin/users');
+interface DateRangeParams {
+  startDate?: string;
+  endDate?: string;
+}
+
+export const getUsersReport = async (params: DateRangeParams = {}): Promise<UserReport> => {
+    const response = await http.get('/reports/admin/users', { params });
     return response.data;
 };
 
-export const getMonetizationReport = async (): Promise<MonetizationReport> => {
-    const response = await http.get('/reports/admin/monetization');
+export const getMonetizationReport = async (params: DateRangeParams = {}): Promise<MonetizationReport> => {
+    const response = await http.get('/reports/admin/monetization', { params });
     return response.data;
 };
 
-export const getImpactReport = async (): Promise<ImpactReport> => {
-    const response = await http.get('/reports/admin/impact');
+export const getImpactReport = async (params: DateRangeParams = {}): Promise<ImpactReport> => {
+    const response = await http.get('/reports/admin/impact', { params });
+    return response.data;
+};
+
+// Nueva función para el reporte de reclamos
+export const getClaimsReport = async (params: DateRangeParams = {}): Promise<ClaimsReport> => {
+    const response = await http.get('/reports/admin/claims', { params });
     return response.data;
 };

@@ -1,41 +1,70 @@
-// backend/src/reports/dto/report-response.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
+// DTO para el query de fechas
+export class DateRangeDto {
+  @ApiProperty({ required: false, description: 'Fecha de inicio (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  startDate: string;
+
+  @ApiProperty({ required: false, description: 'Fecha de fin (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  endDate: string;
+}
+
+// DTOs para las respuestas de los reportes
 export class UserReportDto {
   @ApiProperty()
   totalUsers: number;
-  
-  @ApiProperty()
-  activeUsers: { role: string; count: number }[];
 
   @ApiProperty()
-  top10UsersByExchanges: any[];
-  
+  newUsersInPeriod: number;
+
   @ApiProperty()
-  churnUsersCount: number;
+  activeUsersInPeriod: number;
+
+  @ApiProperty()
+  inactiveUsers: number;
 }
 
 export class MonetizationReportDto {
   @ApiProperty()
-  totalRevenue: number;
+  revenueInPeriod: number;
 
   @ApiProperty()
-  revenueLast30Days: number;
+  exchangesInPeriod: number;
 
   @ApiProperty()
-  creditSource: { source: string; amount: number }[];
+  creditsPurchasedInPeriod: number;
 
   @ApiProperty()
-  activePremiumUsers: number;
+  creditsExchangedInPeriod: number;
 }
 
 export class ImpactReportDto {
-    @ApiProperty()
-    totalItemsExchanged: number;
+  @ApiProperty({ type: () => [ImpactByCategoryDto] })
+  impactByCategory: ImpactByCategoryDto[];
+}
 
-    @ApiProperty()
-    exchangesByCategory: { categoryName: string; totalExchanges: number }[];
-    
-    @ApiProperty()
-    listingToExchangeRatioByCategory: { categoryName: string; ratio: number }[];
+export class ImpactByCategoryDto {
+  @ApiProperty()
+  categoryName: string;
+
+  @ApiProperty()
+  itemsExchanged: number;
+}
+
+export class ClaimsReportDto {
+  @ApiProperty({ type: () => [ClaimsByStatusDto] })
+  claimsByStatus: ClaimsByStatusDto[];
+}
+
+export class ClaimsByStatusDto {
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty()
+  count: number;
 }

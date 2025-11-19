@@ -176,3 +176,17 @@ CREATE TABLE IF NOT EXISTS impact_daily (
   co2_saved_kg NUMERIC(10,2) NOT NULL DEFAULT 0.00,
   service_hours NUMERIC(10,2) NOT NULL DEFAULT 0.00
 );
+
+-- Tabla para gestionar reclamos sobre intercambios
+CREATE TABLE IF NOT EXISTS claims (
+    id SERIAL PRIMARY KEY,
+    exchange_id BIGINT NOT NULL REFERENCES exchanges(id),
+    claimant_id INT NOT NULL REFERENCES users(id), -- Quien hace el reclamo
+    reason TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'abierto' CHECK (status IN ('abierto', 'en_revision', 'resuelto', 'cerrado')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_claims_exchange_id ON claims(exchange_id);
+CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
