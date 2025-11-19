@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-    BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
+import { 
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
 import * as api from '../services/api';
 import { UserReport, MonetizationReport, ImpactReport, ClaimsReport, AdvancedReport } from '../types';
@@ -9,13 +9,18 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const COLORS = ['#2e7d32', '#66bb6a', '#81c784', '#a5d6a7', '#c8e6c9'];
-const RED_COLORS = ['#ef5350', '#e57373'];
+const STATUS_COLORS = {
+    'abierto': '#ef5350',   // Rojo
+    'en_revision': '#ffa726', // Naranja
+    'resuelto': '#66bb6a',   // Verde
+    'cerrado': '#bdbdbd'     // Gris
+};
 
 const AdminPage = () => {
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeTab, setActiveTab] = useState('dashboard'); // Pestaña única para ver todo de un vistazo
     const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState({
-        startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
+        startDate: new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0], // Últimos 6 meses por defecto
         endDate: new Date().toISOString().split('T')[0],
     });
 
@@ -30,20 +35,16 @@ const AdminPage = () => {
         setLoading(true);
         try {
             const params = { startDate: dateRange.startDate, endDate: dateRange.endDate };
-            const [users, monetization, impact, claims, advanced] = await Promise.all([
-                api.getUsersReport(params),
-                api.getMonetizationReport(params),
-                api.getImpactReport(params),
-                api.getClaimsReport(params),
-                api.getAdvancedReport(),
-            ]);
-            setUserReport(users);
-            setMonetizationReport(monetization);
-            setImpactReport(impact);
-            setClaimsReport(claims);
-            setAdvancedReport(advanced);
+            
+            // Hacemos las peticiones por separado para que si falla una, no rompa todo
+            try { const res = await api.getUsersReport(params); setUserReport(res); } catch(e) { console.error("Error Users", e); }
+            try { const res = await api.getMonetizationReport(params); setMonetizationReport(res); } catch(e) { console.error("Error Monetization", e); }
+            try { const res = await api.getImpactReport(params); setImpactReport(res); } catch(e) { console.error("Error Impact", e); }
+            try { const res = await api.getClaimsReport(params); setClaimsReport(res); } catch(e) { console.error("Error Claims", e); }
+            try { const res = await api.getAdvancedReport(); setAdvancedReport(res); } catch(e) { console.error("Error Advanced", e); }
+
         } catch (err) {
-            console.error(err);
+            console.error("Error general cargando reportes", err);
         } finally {
             setLoading(false);
         }
@@ -57,218 +58,189 @@ const AdminPage = () => {
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        pdf.addImage(imgData, 'PNG', 10, 10, 280, (canvas.height * 280) / canvas.width);
-        pdf.save('reporte_ejecutivo.pdf');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('reporte_gestion_trueque.pdf');
     };
 
     if (loading) return <Spinner />;
 
+    // Preparar datos para gráficos
+    const userActivityData = userReport ? [
+        { name: 'Activos', value: userReport.activeUsersInPeriod },
+        { name: 'Inactivos', value: userReport.inactiveUsers },
+        { name: 'Nuevos', value: userReport.newUsersInPeriod }
+    ] : [];
+
+    const claimsData = claimsReport?.claimsByStatus.map(c => ({
+        name: c.status.replace('_', ' ').toUpperCase(),
+        value: c.count
+    })) || [];
+
     return (
-        <div className="max-w-7xl mx-auto pb-12" id="admin-dashboard-content">
+        <div className="max-w-7xl mx-auto pb-12 px-4" id="admin-dashboard-content">
             {/* Encabezado */}
-            <div className="flex justify-between items-center mb-8 border-b pb-4">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 border-b pb-4 gap-4">
                 <div>
-                    <h1 className="text-4xl font-bold text-green-dark">Tablero de Control Ejecutivo</h1>
-                    <p className="text-gray-600">Monitorización estratégica de uso, crecimiento y monetización.</p>
+                    <h1 className="text-3xl font-bold text-green-dark">Panel de Control y Reportes</h1>
+                    <p className="text-gray-600">Indicadores de desempeño, impacto y transacciones.</p>
                 </div>
-                <div className="flex gap-4">
-                    <input type="date" value={dateRange.startDate} onChange={e => setDateRange({ ...dateRange, startDate: e.target.value })} className="border rounded px-2" />
-                    <input type="date" value={dateRange.endDate} onChange={e => setDateRange({ ...dateRange, endDate: e.target.value })} className="border rounded px-2" />
-                    <button onClick={fetchReports} className="bg-green-primary text-white px-4 rounded hover:bg-green-dark">Filtrar</button>
-                    <button onClick={generatePDF} className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700">PDF</button>
-                </div>
-            </div>
-
-            {/* Navegación */}
-            <div className="flex space-x-4 mb-6">
-                {['overview', 'growth', 'monetization', 'impact'].map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-4 py-2 rounded-lg font-semibold capitalize ${activeTab === tab ? 'bg-green-100 text-green-800 border-2 border-green-500' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        {tab === 'overview' ? 'Resumen General' : tab === 'growth' ? 'Uso y Crecimiento' : tab === 'monetization' ? 'Monetización' : 'Impacto'}
+                <div className="flex flex-wrap gap-2 items-center bg-white p-2 rounded shadow-sm">
+                    <span className="text-sm font-bold text-gray-500">Periodo:</span>
+                    <input type="date" value={dateRange.startDate} onChange={e => setDateRange({...dateRange, startDate: e.target.value})} className="border rounded px-2 py-1 text-sm" />
+                    <span className="text-gray-400">-</span>
+                    <input type="date" value={dateRange.endDate} onChange={e => setDateRange({...dateRange, endDate: e.target.value})} className="border rounded px-2 py-1 text-sm" />
+                    <button onClick={fetchReports} className="bg-green-primary text-white px-3 py-1 rounded hover:bg-green-dark text-sm">Actualizar</button>
+                    <button onClick={generatePDF} className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm flex items-center gap-1">
+                        <span>📄</span> PDF
                     </button>
-                ))}
+                </div>
             </div>
 
-            {/* CONTENIDO */}
-            <div className="space-y-8">
+            {/* KPI CARDS (Resumen Ejecutivo) */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <KpiCard 
+                    title="Usuarios Totales" 
+                    value={userReport?.totalUsers || 0} 
+                    icon="👥"
+                    explanation="Base de usuarios registrados."
+                />
+                <KpiCard 
+                    title="Ingresos (Bs)" 
+                    value={monetizationReport?.revenueInPeriod || 0} 
+                    icon="💰"
+                    explanation="Ingresos por venta de créditos en el periodo."
+                />
+                <KpiCard 
+                    title="Intercambios" 
+                    value={monetizationReport?.exchangesInPeriod || 0} 
+                    icon="🤝"
+                    explanation="Total de trueques realizados exitosamente."
+                />
+                <KpiCard 
+                    title="Reclamos Activos" 
+                    value={claimsData.find(c => c.name === 'ABIERTO')?.value || 0} 
+                    icon="⚠️"
+                    isNegative
+                    explanation="Atención al cliente requerida."
+                />
+            </div>
 
-                {/* --- TAB: RESUMEN GENERAL --- */}
-                {activeTab === 'overview' && userReport && monetizationReport && (
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <KpiCard
-                                title="Usuarios Activos (30d)"
-                                value={userReport.activeUsersInPeriod}
-                                target={100}
-                                explanation="Usuarios con transacciones o login en los últimos 30 días. Indica vitalidad de la plataforma."
-                            />
-                            <KpiCard
-                                title="Ingresos del Periodo"
-                                value={`${monetizationReport.revenueInPeriod} Bs`}
-                                target={500}
-                                explanation="Dinero real recaudado por venta de créditos en el periodo seleccionado."
-                            />
-                            <KpiCard
-                                title="Intercambios Totales"
-                                value={monetizationReport.exchangesInPeriod}
-                                target={50}
-                                explanation="Número de transacciones exitosas. Refleja la liquidez del mercado."
-                            />
-                            <KpiCard
-                                title="Conversión a Premium"
-                                value="12%"
-                                target={15}
-                                explanation="% de usuarios que compran créditos vs total de usuarios."
-                            />
+            {/* SECCIÓN 1: ACTIVIDAD DE USUARIOS */}
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4 border-l-4 border-green-primary pl-3">1. Actividad de Usuarios</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <ChartContainer title="Distribución de Usuarios" explanation="Proporción entre usuarios activos, inactivos y nuevos. Ayuda a medir la retención.">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie data={userActivityData} cx="50%" cy="50%" outerRadius={80} label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                                    {userActivityData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+
+                    <ChartContainer title="Tendencia de Crecimiento (Últimos Meses)" explanation="Comparativa visual de nuevos usuarios vs abandonos por mes.">
+                        {advancedReport?.trends ? (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={advancedReport.trends}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="monthLabel" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="newUsers" name="Nuevos" stroke="#2e7d32" strokeWidth={2} />
+                                    <Line type="monotone" dataKey="activeUsers" name="Activos Totales" stroke="#81c784" strokeWidth={2} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : <p className="text-center text-gray-400 py-10">No hay datos de tendencia disponibles</p>}
+                    </ChartContainer>
+                </div>
+            </div>
+
+            {/* SECCIÓN 2: TRANSACCIONES Y MONETIZACIÓN */}
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4 border-l-4 border-green-primary pl-3">2. Intercambios y Créditos</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <ChartContainer title="Flujo de Créditos" explanation="Comparativa entre créditos comprados (entrada de dinero) y créditos intercambiados (economía interna).">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={[{
+                                name: 'Periodo Actual',
+                                Comprados: monetizationReport?.creditsPurchasedInPeriod || 0,
+                                Intercambiados: monetizationReport?.creditsExchangedInPeriod || 0
+                            }]}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="Comprados" fill="#66bb6a" name="Créditos Comprados" />
+                                <Bar dataKey="Intercambiados" fill="#2e7d32" name="Créditos Circulantes" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                    
+                    <ChartContainer title="Ranking Top 10 Usuarios" explanation="Usuarios con mayor participación en el ecosistema.">
+                         <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left text-gray-500">
+                                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th className="px-4 py-2">Usuario</th>
+                                        <th className="px-4 py-2 text-center">Trueques</th>
+                                        <th className="px-4 py-2 text-right">Puntaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {advancedReport?.topUsers?.length ? advancedReport.topUsers.map((u, i) => (
+                                        <tr key={i} className="bg-white border-b hover:bg-gray-50">
+                                            <td className="px-4 py-2 font-medium text-gray-900">{u.userName}</td>
+                                            <td className="px-4 py-2 text-center">{u.exchangesCount}</td>
+                                            <td className="px-4 py-2 text-right font-bold text-green-600">{u.score.toFixed(0)}</td>
+                                        </tr>
+                                    )) : <tr><td colSpan={3} className="text-center py-4">Sin datos</td></tr>}
+                                </tbody>
+                            </table>
                         </div>
+                    </ChartContainer>
+                </div>
+            </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ChartContainer title="Ranking Top 10 Usuarios" explanation="Usuarios con mayor puntaje basado en intercambios y créditos generados.">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm text-left text-gray-500">
-                                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                                            <tr>
-                                                <th className="px-4 py-2">Usuario</th>
-                                                <th className="px-4 py-2 text-center">Intercambios</th>
-                                                <th className="px-4 py-2 text-right">Score</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {advancedReport?.topUsers.map((u, i) => (
-                                                <tr key={i} className="bg-white border-b hover:bg-gray-50">
-                                                    <td className="px-4 py-2 font-medium text-gray-900">{u.userName}</td>
-                                                    <td className="px-4 py-2 text-center">{u.exchangesCount}</td>
-                                                    <td className="px-4 py-2 text-right font-bold text-green-600">{u.score.toFixed(1)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </ChartContainer>
+            {/* SECCIÓN 3: CUSTODIA, RECLAMOS E IMPACTO */}
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4 border-l-4 border-green-primary pl-3">3. Calidad e Impacto</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <ChartContainer title="Estado de Reclamos" explanation="Supervisión de conflictos en los trueques.">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie data={claimsData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                    {claimsData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={Object.values(STATUS_COLORS)[index % 4]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
 
-                            <ChartContainer title="Ratio Publicaciones vs Intercambios" explanation="Mide la eficiencia del mercado. Un ratio bajo indica poca demanda o mala calidad de listings.">
-                                <div className="flex flex-col items-center justify-center h-full">
-                                    <div className="text-6xl font-bold text-blue-600 mb-2">
-                                        {((monetizationReport.exchangesInPeriod / (userReport.totalUsers * 2 || 1)) * 100).toFixed(1)}%
-                                    </div>
-                                    <p className="text-gray-500 text-center">Eficiencia de Mercado Estimada</p>
-                                    <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
-                                        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '45%' }}></div>
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-1">Objetivo: &gt;50%</p>
-                                </div>
-                            </ChartContainer>
-                        </div>
-                    </>
-                )}
-
-                {/* --- TAB: USO Y CRECIMIENTO --- */}
-                {activeTab === 'growth' && advancedReport && userReport && (
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ChartContainer title="Tendencia: Nuevos vs Abandonos" explanation="Comparativa mensual. Si la línea roja supera a la verde, estamos perdiendo base de usuarios.">
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart data={advancedReport.trends}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="monthLabel" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Line type="monotone" dataKey="newUsers" name="Nuevos" stroke="#2e7d32" strokeWidth={2} />
-                                        <Line type="monotone" dataKey="churnedUsers" name="Abandonos" stroke="#ef5350" strokeWidth={2} />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </ChartContainer>
-
-                            <ChartContainer title="Usuarios Activos Mensuales (MAU)" explanation="Evolución de usuarios que realizaron al menos una acción en el mes.">
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={advancedReport.trends}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="monthLabel" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Bar dataKey="activeUsers" name="Usuarios Activos" fill="#66bb6a" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </ChartContainer>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <KpiCard title="Total Usuarios Histórico" value={userReport.totalUsers} explanation="Base de datos total de registros." />
-                            <KpiCard title="Nuevos (Periodo Seleccionado)" value={userReport.newUsersInPeriod} explanation="Captación reciente." />
-                            <KpiCard title="Tasa de Abandono Global" value={`${((userReport.inactiveUsers / userReport.totalUsers) * 100).toFixed(1)}%`} explanation="% usuarios inactivos > 60 días." isNegative />
-                        </div>
-                    </>
-                )}
-
-                {/* --- TAB: MONETIZACIÓN --- */}
-                {activeTab === 'monetization' && advancedReport && monetizationReport && (
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ChartContainer title="Ingresos Mensuales (Bs)" explanation="Tendencia de recaudación por venta de paquetes de créditos.">
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart data={advancedReport.trends}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="monthLabel" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Line type="monotone" dataKey="revenue" name="Ingresos (Bs)" stroke="#2e7d32" activeDot={{ r: 8 }} />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </ChartContainer>
-
-                            <ChartContainer title="Consumo vs Generación de Créditos" explanation="Equilibrio económico. Si la generación supera por mucho al consumo, habrá inflación de créditos.">
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={[{
-                                        name: 'Periodo Actual',
-                                        Generados: monetizationReport.creditsPurchasedInPeriod, // Simplificación para el ejemplo
-                                        Consumidos: monetizationReport.creditsExchangedInPeriod
-                                    }]}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar dataKey="Generados" fill="#81c784" />
-                                        <Bar dataKey="Consumidos" fill="#2e7d32" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </ChartContainer>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <KpiCard title="Créditos Comprados" value={monetizationReport.creditsPurchasedInPeriod} explanation="Volumen de moneda virtual inyectada." />
-                            <KpiCard title="Créditos Intercambiados" value={monetizationReport.creditsExchangedInPeriod} explanation="Volumen de moneda virtual circulante." />
-                            <KpiCard title="Ticket Promedio" value={`${(monetizationReport.revenueInPeriod / (monetizationReport.exchangesInPeriod || 1)).toFixed(2)} Bs`} explanation="Ingreso promedio por intercambio realizado." />
-                        </div>
-                    </>
-                )}
-
-                {/* --- TAB: IMPACTO --- */}
-                {activeTab === 'impact' && impactReport && (
-                    <>
-                        <div className="grid grid-cols-1 gap-8">
-                            <ChartContainer title="Intercambios por Categoría" explanation="Ayuda a identificar nichos de mercado y categorías más populares.">
-                                <ResponsiveContainer width="100%" height={400}>
-                                    <BarChart data={impactReport.impactByCategory} layout="vertical" margin={{ left: 20 }}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis type="number" />
-                                        <YAxis type="category" dataKey="categoryName" width={150} />
-                                        <Tooltip />
-                                        <Bar dataKey="itemsExchanged" fill="#2e7d32" name="Items Intercambiados" radius={[0, 4, 4, 0]}>
-                                            {impactReport.impactByCategory.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </ChartContainer>
-                        </div>
-                    </>
-                )}
+                    <ChartContainer title="Impacto por Categoría" explanation="Cantidad de artículos reutilizados por categoría.">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={impactReport?.impactByCategory || []} layout="vertical" margin={{ left: 20, right: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis type="number" />
+                                <YAxis type="category" dataKey="categoryName" width={100} style={{fontSize: '12px'}} />
+                                <Tooltip />
+                                <Bar dataKey="itemsExchanged" fill="#2e7d32" name="Artículos Reutilizados" radius={[0, 4, 4, 0]} barSize={20} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </div>
             </div>
         </div>
     );
@@ -276,37 +248,27 @@ const AdminPage = () => {
 
 // --- Componentes Auxiliares ---
 
-const KpiCard = ({ title, value, target, explanation, isNegative = false }: any) => {
-    const isNumber = typeof value === 'number';
-    const numericValue = isNumber ? value : parseFloat(value as string);
-    const statusColor = target ? (numericValue >= target ? 'text-green-600' : 'text-yellow-600') : (isNegative ? 'text-red-600' : 'text-green-600');
-
-    return (
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 flex flex-col justify-between h-full">
+const KpiCard = ({ title, value, icon, explanation, isNegative = false }: any) => (
+    <div className="bg-white p-5 rounded-lg shadow-md border-l-4 border-green-primary flex flex-col justify-between hover:shadow-lg transition-shadow">
+        <div className="flex justify-between items-start">
             <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">{title}</h3>
-                <div className="flex items-end gap-2">
-                    <span className={`text-3xl font-bold ${statusColor}`}>{value}</span>
-                    {target && <span className="text-xs text-gray-400 mb-1">Meta: {target}</span>}
-                </div>
+                <p className="text-gray-500 text-sm font-bold uppercase">{title}</p>
+                <h3 className={`text-3xl font-bold mt-1 ${isNegative && value > 0 ? 'text-red-500' : 'text-gray-800'}`}>
+                    {typeof value === 'number' ? value.toLocaleString() : value}
+                </h3>
             </div>
-            <div className="mt-4 pt-3 border-t border-gray-100">
-                <p className="text-xs text-gray-500 italic">
-                    <span className="font-bold">Interpretación:</span> {explanation}
-                </p>
-            </div>
+            <span className="text-3xl opacity-80">{icon}</span>
         </div>
-    );
-};
+        <p className="text-xs text-gray-400 mt-3 italic border-t pt-2">{explanation}</p>
+    </div>
+);
 
 const ChartContainer = ({ title, explanation, children }: any) => (
-    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-        <h3 className="text-lg font-bold text-green-dark mb-4">{title}</h3>
-        <div className="mb-4">{children}</div>
-        <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
-            <p className="text-xs text-blue-800">
-                <strong>Qué significa:</strong> {explanation}
-            </p>
+    <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 flex flex-col h-full">
+        <h3 className="text-lg font-bold text-green-dark mb-1">{title}</h3>
+        <p className="text-xs text-gray-500 mb-4">{explanation}</p>
+        <div className="flex-grow min-h-[300px]">
+            {children}
         </div>
     </div>
 );
