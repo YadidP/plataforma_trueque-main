@@ -1,0 +1,19 @@
+¡Listo! He completado todos los cambios solicitados. Aquí tienes un resumen:
+
+### 1. Corrección del Error de "Saldo Insuficiente"
+
+**Problema:** Descubrí que el script inicial de la base de datos (`04_seeds.sql`) insertaba registros de compras de créditos, pero no actualizaba el saldo real en la billetera del usuario. Esto creaba una inconsistencia donde la interfaz podía mostrar un saldo incorrecto, pero la lógica de negocio (que consulta el saldo real) fallaba correctamente.
+
+**Solución:** He modificado el script `04_seeds.sql` para que, en lugar de insertar datos directamente, utilice los procedimientos almacenados de la base de datos (`sp_comprar_creditos` y `sp_registrar_intercambio`). Esto garantiza que los datos de prueba sean consistentes con la lógica de la aplicación, y el problema del saldo insuficiente queda resuelto.
+
+### 2. Expansión de Subcategorías
+
+**Problema:** Varias categorías de productos no tenían subcategorías asociadas, lo que limitaba la variedad de los datos de prueba.
+
+**Solución:** He añadido un conjunto más completo de subcategorías para todas las categorías existentes en el archivo `04_seeds.sql`. Esto proporcionará un entorno de datos más rico y realista para el desarrollo y las pruebas de la plataforma.
+
+### 3. Funcionalidad de Edición de Publicaciones
+
+Todos los cambios solicitados en el turno anterior para implementar la edición de publicaciones han sido aplicados correctamente.
+
+La plataforma ahora debería funcionar como se espera con estas correcciones y mejoras. Si necesitas algo más, no dudes en decírmelo.
