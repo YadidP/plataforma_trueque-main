@@ -1,5 +1,5 @@
 import http from './http';
-import type { User, Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport, ClaimsReport } from '../types';
+import type { User, Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport, ClaimsReport, AdvancedReport } from '../types';
 
 // Helper to ensure full /uploads/ path and fallback
 const getImageUrl = (path: string | undefined): string => {
@@ -15,34 +15,34 @@ export const login = async (email: string, password: string): Promise<{ accessTo
 };
 
 export const register = async (name: string, email: string, password: string): Promise<{ accessToken: string }> => {
-    const response = await http.post('/auth/register', { name, email, password });
-    return response.data;
+  const response = await http.post('/auth/register', { name, email, password });
+  return response.data;
 };
 
 export const getMe = async (): Promise<User> => {
-    const response = await http.get('/auth/me');
-    return response.data;
+  const response = await http.get('/auth/me');
+  return response.data;
 };
 
 
 // --- WALLET & CREDITS ---
 export const getWallet = async (): Promise<Wallet> => {
-    const response = await http.get('/wallet/saldo');
-    return response.data;
+  const response = await http.get('/wallet/saldo');
+  return response.data;
 };
 
 export const getCreditMovements = async (): Promise<CreditMovement[]> => {
-    const response = await http.get('/wallet/movimientos');
-    return response.data;
+  const response = await http.get('/wallet/movimientos');
+  return response.data;
 };
 
 export const getCreditPackages = async (): Promise<CreditPackage[]> => {
-    const response = await http.get('/credits/packages');
-    return response.data;
+  const response = await http.get('/credits/packages');
+  return response.data;
 };
 
 export const purchaseCredits = async (packageId: number, paymentRef: string): Promise<void> => {
-    await http.post('/credits/purchase', { creditsPackageId: packageId, paymentRef });
+  await http.post('/credits/purchase', { creditsPackageId: packageId, paymentRef });
 };
 
 
@@ -103,32 +103,32 @@ export const getMaterials = async (): Promise<Material[]> => {
 };
 
 export const getCategoryById = async (id: number): Promise<Category | undefined> => {
-    const response = await http.get(`/categories/${id}`);
-    return response.data;
+  const response = await http.get(`/categories/${id}`);
+  return response.data;
 }
 
 export const createListing = async (formData: FormData): Promise<Listing> => {
-    const response = await http.post('/listings', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
+  const response = await http.post('/listings', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
 };
 
 // --- EXCHANGES & IMPACT ---
 export const createExchange = async (listingId: number, quantity: number): Promise<void> => {
-    await http.post('/exchanges', { listingId, quantity });
+  await http.post('/exchanges', { listingId, quantity });
 };
 
 export const getMyExchanges = async (): Promise<Exchange[]> => {
-    const response = await http.get('/exchanges');
-    return response.data;
+  const response = await http.get('/exchanges');
+  return response.data;
 };
 
 export const getImpactMetrics = async (): Promise<ImpactMetrics> => {
-    const response = await http.get('/reports/my-impact');
-    return response.data;
+  const response = await http.get('/reports/my-impact');
+  return response.data;
 };
 
 export const postImpactPreview = async (data: { material_id: number; quantity: number; quantity_unit: string }): Promise<ImpactMetricResult[]> => {
@@ -143,22 +143,27 @@ interface DateRangeParams {
 }
 
 export const getUsersReport = async (params: DateRangeParams = {}): Promise<UserReport> => {
-    const response = await http.get('/reports/admin/users', { params });
-    return response.data;
+  const response = await http.get('/reports/admin/users', { params });
+  return response.data;
 };
 
 export const getMonetizationReport = async (params: DateRangeParams = {}): Promise<MonetizationReport> => {
-    const response = await http.get('/reports/admin/monetization', { params });
-    return response.data;
+  const response = await http.get('/reports/admin/monetization', { params });
+  return response.data;
 };
 
 export const getImpactReport = async (params: DateRangeParams = {}): Promise<ImpactReport> => {
-    const response = await http.get('/reports/admin/impact', { params });
-    return response.data;
+  const response = await http.get('/reports/admin/impact', { params });
+  return response.data;
 };
 
 // Nueva función para el reporte de reclamos
 export const getClaimsReport = async (params: DateRangeParams = {}): Promise<ClaimsReport> => {
-    const response = await http.get('/reports/admin/claims', { params });
-    return response.data;
+  const response = await http.get('/reports/admin/claims', { params });
+  return response.data;
+};
+
+export const getAdvancedReport = async (): Promise<AdvancedReport> => {
+  const response = await http.get('/reports/admin/advanced');
+  return response.data;
 };

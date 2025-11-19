@@ -68,3 +68,42 @@ export class ClaimsByStatusDto {
   @ApiProperty()
   count: number;
 }
+
+export class MonthlyTrendDto {
+  @ApiProperty()
+  monthLabel: string;
+
+  @ApiProperty()
+  revenue: number;
+
+  @ApiProperty()
+  newUsers: number;
+
+  @ApiProperty()
+  churnedUsers: number;
+
+  @ApiProperty()
+  activeUsers: number;
+}
+
+export class TopUserDto {
+  @ApiProperty()
+  userName: string;
+
+  @ApiProperty()
+  score: number;
+
+  @ApiProperty()
+  exchangesCount: number;
+
+  @ApiProperty()
+  creditsGenerated: number;
+}
+
+export class AdvancedReportDto {
+  @ApiProperty({ type: () => [MonthlyTrendDto] })
+  trends: MonthlyTrendDto[];
+
+  @ApiProperty({ type: () => [TopUserDto] })
+  topUsers: TopUserDto[];
+}

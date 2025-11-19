@@ -106,16 +106,16 @@ export interface CreditPackage {
 }
 
 export interface ImpactMetrics {
-    reusedItems: number;
-    co2Saved: number;
-    co2Unit: string;
-    waterSaved: number;
-    waterUnit: string;
-    energySaved: number;
-    energyUnit: string;
-    wastePrevented: number;
-    wasteUnit: string;
-    serviceHours: number;
+  reusedItems: number;
+  co2Saved: number;
+  co2Unit: string;
+  waterSaved: number;
+  waterUnit: string;
+  energySaved: number;
+  energyUnit: string;
+  wastePrevented: number;
+  wasteUnit: string;
+  serviceHours: number;
 }
 
 export interface ImpactEquivalence {
@@ -147,8 +147,28 @@ export interface ImpactReport {
 }
 
 export interface ClaimsReport {
-    claimsByStatus: {
-        status: string;
-        count: number;
-    }[];
+  claimsByStatus: {
+    status: string;
+    count: number;
+  }[];
+}
+
+export interface MonthlyTrend {
+  monthLabel: string;
+  revenue: number;
+  newUsers: number;
+  churnedUsers: number;
+  activeUsers: number;
+}
+
+export interface TopUser {
+  userName: string;
+  score: number;
+  exchangesCount: number;
+  creditsGenerated: number;
+}
+
+export interface AdvancedReport {
+  trends: MonthlyTrend[];
+  topUsers: TopUser[];
 }

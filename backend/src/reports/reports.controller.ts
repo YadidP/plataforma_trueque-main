@@ -13,7 +13,7 @@ import { UserReportDto, MonetizationReportDto, ImpactReportDto, ClaimsReportDto,
 @UseGuards(JwtAuthGuard)
 @Controller('reports')
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(private readonly reportsService: ReportsService) { }
 
   @Get('my-impact')
   @ApiOperation({ summary: 'Get personal impact metrics for the logged-in user' })
@@ -56,5 +56,13 @@ export class ReportsController {
   @ApiResponse({ status: 200, type: ClaimsReportDto })
   getClaimsReport(@Query() dateRange: DateRangeDto) {
     return this.reportsService.getClaimsReport(dateRange);
+  }
+
+  @Get('admin/advanced')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get advanced trends and ranking' })
+  getAdvancedReport() {
+    return this.reportsService.getAdvancedMetrics();
   }
 }

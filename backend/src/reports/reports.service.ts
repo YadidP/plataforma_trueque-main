@@ -5,7 +5,7 @@ import { UserReportDto, MonetizationReportDto, ImpactReportDto, ClaimsReportDto,
 
 @Injectable()
 export class ReportsService {
-    constructor(private dataSource: DataSource) {}
+    constructor(private dataSource: DataSource) { }
 
     // Lógica para el Dashboard del Usuario (sin cambios)
     async getUserImpactMetrics(userId: number): Promise<any> {
@@ -61,13 +61,34 @@ export class ReportsService {
         };
     }
 
+    async getAdvancedMetrics(): Promise<any> {
+        const trendsResult = await this.dataSource.query('SELECT * FROM fn_report_monthly_trends()');
+        const topUsersResult = await this.dataSource.query('SELECT * FROM fn_report_top_users()');
+
+        return {
+            trends: trendsResult.map(row => ({
+                monthLabel: row.month_label,
+                revenue: Number(row.revenue),
+                newUsers: Number(row.new_users),
+                churnedUsers: Number(row.churned_users),
+                activeUsers: Number(row.active_users),
+            })),
+            topUsers: topUsersResult.map(row => ({
+                userName: row.user_name,
+                score: Number(row.score),
+                exchangesCount: Number(row.exchanges_count),
+                creditsGenerated: Number(row.credits_generated),
+            })),
+        };
+    }
+
     /**
      * Prepara las fechas. Si no se proveen, usa un rango por defecto (ej. últimos 30 días).
      */
     private prepareDates(dateRange: DateRangeDto): { startDate: string, endDate: string } {
         const endDate = dateRange.endDate ? new Date(dateRange.endDate) : new Date();
         const startDate = dateRange.startDate ? new Date(dateRange.startDate) : new Date(new Date().setDate(endDate.getDate() - 30));
-        
+
         return {
             startDate: startDate.toISOString().split('T')[0],
             endDate: endDate.toISOString().split('T')[0],

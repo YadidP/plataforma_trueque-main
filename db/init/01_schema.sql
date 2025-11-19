@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS entrepreneur_profiles (
 -- NUEVA TABLA: Tipos de suscripción
 CREATE TABLE IF NOT EXISTS subscriptions (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE,
     price_bs NUMERIC(10, 2) NOT NULL,
     duration_days INTEGER NOT NULL,
     description TEXT
