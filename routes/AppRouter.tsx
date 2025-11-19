@@ -13,6 +13,7 @@ import DashboardPage from '../pages/DashboardPage';
 import ListingsPage from '../pages/ListingsPage';
 import ListingDetailPage from '../pages/ListingDetailPage';
 import CreateListingPage from '../pages/CreateListingPage';
+import EditListingPage from '../pages/EditListingPage';
 import WalletPage from '../pages/WalletPage';
 import ExchangesPage from '../pages/ExchangesPage';
 import AdminPage from '../pages/AdminPage';
@@ -40,6 +41,7 @@ const AppRouter = () => {
         {/* Rutas Protegidas para Usuarios Autenticados - DEBEN VENIR PRIMERO */}
         <Route element={<ProtectedRoute />}>
           <Route path="listings/new" element={<CreateListingPage />} />
+          <Route path="listings/edit/:id" element={<EditListingPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="wallet" element={<WalletPage />} />
           <Route path="exchanges" element={<ExchangesPage />} />

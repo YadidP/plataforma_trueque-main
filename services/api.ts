@@ -116,6 +116,15 @@ export const createListing = async (formData: FormData): Promise<Listing> => {
   return response.data;
 };
 
+export const updateListing = async (id: number, formData: FormData): Promise<Listing> => {
+    const response = await http.patch(`/listings/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+};
+
 // --- EXCHANGES & IMPACT ---
 export const createExchange = async (listingId: number, quantity: number): Promise<void> => {
   await http.post('/exchanges', { listingId, quantity });

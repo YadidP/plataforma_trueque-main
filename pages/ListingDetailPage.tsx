@@ -148,18 +148,28 @@ const ListingDetailPage = () => {
             <p className="text-sm text-gray-600">por {listing.unitLabel}</p>
           </div>
           
-          {isAuthenticated && !isOwner && listing.status === ListingStatus.ACTIVE && (
-            <button
-              onClick={() => setIsConfirming(true)}
-              className="w-full bg-green-primary hover:bg-green-dark text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors"
-            >
-              Intercambiar ahora
-            </button>
-          )}
+          <div className="flex flex-col gap-3 mt-6">
+            {isAuthenticated && !isOwner && listing.status === ListingStatus.ACTIVE && (
+              <button
+                onClick={() => setIsConfirming(true)}
+                className="w-full bg-green-primary hover:bg-green-dark text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors"
+              >
+                Intercambiar ahora
+              </button>
+            )}
+            
+            {isOwner && listing.status === ListingStatus.ACTIVE && (
+              <Link 
+                 to={`/listings/edit/${listing.id}`}
+                 className="w-full text-center border-2 border-blue-500 text-blue-600 hover:bg-blue-50 font-bold py-3 px-4 rounded-lg text-lg transition-colors"
+              >
+                 ✏️ Editar Publicación
+              </Link>
+            )}
+          </div>
 
-          {isOwner && <p className="text-center text-gray-500 italic">Esta es tu publicación.</p>}
-          {!isAuthenticated && <p className="text-center text-gray-500"><Link to="/login" className="text-green-primary underline">Inicia sesión</Link> para intercambiar.</p>}
-          {listing.status !== ListingStatus.ACTIVE && <p className="text-center font-bold text-red-600 p-3 bg-red-100 rounded">Esta publicación ya no está disponible.</p>}
+          {!isAuthenticated && <p className="text-center text-gray-500 mt-4"><Link to="/login" className="text-green-primary underline">Inicia sesión</Link> para intercambiar.</p>}
+          {listing.status !== ListingStatus.ACTIVE && <p className="text-center font-bold text-red-600 p-3 bg-red-100 rounded mt-4">Esta publicación ya no está disponible.</p>}
         </div>
       </div>
 
