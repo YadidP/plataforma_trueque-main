@@ -6,6 +6,12 @@ import { Material } from './material.entity'; // Import Material
 import { ListingImage } from './listing-image.entity';
 import { ListingStatus } from '../common/enums';
 
+// Definir transformador (si no lo importas de otro lado)
+const numericTransformer = {
+  to: (data: number) => data,
+  from: (data: string) => parseFloat(data),
+};
+
 @Entity('listings')
 export class Listing {
   @PrimaryGeneratedColumn()
@@ -39,7 +45,14 @@ export class Listing {
   @Column({ name: 'quantity_range', length: 50, nullable: true }) // New field for ranges
   quantityRange?: string;
 
-  @Column({ name: 'unit_credits', type: 'numeric', precision: 10, scale: 2 })
+  // MODIFICAR ESTA COLUMNA
+  @Column({ 
+    name: 'unit_credits', 
+    type: 'numeric', 
+    precision: 10, 
+    scale: 2,
+    transformer: numericTransformer 
+  })
   unitCredits: number;
 
   @Column({ name: 'unit_label', length: 50, nullable: true }) // OPTIONAL

@@ -51,7 +51,8 @@ const ListingDetailPage = () => {
   const handleExchange = async () => {
     if (!listing || !user) return;
     
-    if (wallet && wallet.balance < listing.unitCredits) {
+    // Forzamos Number() para asegurar comparación numérica matemática
+    if (wallet && Number(wallet.balance) < Number(listing.unitCredits)) {
         addNotification('Saldo insuficiente para completar esta operación.', 'error');
         return;
     }
