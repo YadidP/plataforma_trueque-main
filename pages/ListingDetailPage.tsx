@@ -15,6 +15,9 @@ const ListingDetailPage = () => {
   const [exchangeLoading, setExchangeLoading] = useState(false);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isReporting, setIsReporting] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
 
   const { isAuthenticated, user } = useAuth();
   const { addNotification } = useNotification();
@@ -50,35 +53,54 @@ const ListingDetailPage = () => {
 
   const handleExchange = async () => {
     if (!listing || !user) return;
-    
+
     // Forzamos Number() para asegurar comparación numérica matemática
     if (wallet && Number(wallet.balance) < Number(listing.unitCredits)) {
-        addNotification('Saldo insuficiente para completar esta operación.', 'error');
-        return;
+      addNotification('Saldo insuficiente para completar esta operación.', 'error');
+      return;
     }
 
     setExchangeLoading(true);
     try {
-        await api.createExchange(listing.id, 1);
-        addNotification('¡Intercambio realizado con éxito!', 'success');
-        navigate('/exchanges');
-    } catch(error) {
-        // El interceptor de Axios ya extrae el mensaje de error del backend
-        addNotification(`Error: ${error}`, 'error');
+      await api.createExchange(listing.id, 1);
+      addNotification('¡Intercambio realizado con éxito!', 'success');
+      navigate('/exchanges');
+    } catch (error) {
+      // El interceptor de Axios ya extrae el mensaje de error del backend
+      addNotification(`Error: ${error}`, 'error');
     } finally {
-        setExchangeLoading(false);
-        setIsConfirming(false);
+      setExchangeLoading(false);
+      setIsConfirming(false);
     }
   };
+
+  const handleReport = async () => {
+    if (!reportReason.trim()) {
+      addNotification('Por favor ingresa un motivo para el reporte.', 'error');
+      return;
+    }
+    setReportLoading(true);
+    try {
+      await api.createClaim({ listingId: listing?.id, reason: reportReason });
+      addNotification('Reporte enviado correctamente. Un administrador lo revisará.', 'success');
+      setIsReporting(false);
+      setReportReason('');
+    } catch (error) {
+      addNotification('Error al enviar el reporte.', 'error');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
 
   if (loading) return <Spinner />;
   if (!listing) return <p className="text-center">Cargando publicación...</p>;
 
-  const images = listing.images && listing.images.length > 0 
-    ? listing.images 
-    : listing.imageUrl 
-    ? [{ imageUrl: listing.imageUrl } as any]
-    : [];
+  const images = listing.images && listing.images.length > 0
+    ? listing.images
+    : listing.imageUrl
+      ? [{ imageUrl: listing.imageUrl } as any]
+      : [];
 
   const currentImage = images[currentImageIndex];
 
@@ -96,10 +118,10 @@ const ListingDetailPage = () => {
     <div className="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="relative">
-          <img 
-            src={currentImage?.imageUrl} 
-            alt={listing.title} 
-            className="w-full h-auto object-cover rounded-lg shadow-md" 
+          <img
+            src={currentImage?.imageUrl}
+            alt={listing.title}
+            className="w-full h-auto object-cover rounded-lg shadow-md"
             onError={(e) => {
               console.error(`Image error for detail listing ${listing.id}: src=${(e.target as HTMLImageElement).src}`); // Log if fails
               (e.target as HTMLImageElement).src = '/placeholder.jpg'; // Fallback if image fails to load
@@ -127,9 +149,8 @@ const ListingDetailPage = () => {
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
-                    className={`w-12 h-12 rounded border-2 overflow-hidden transition-all ${
-                      idx === currentImageIndex ? 'border-green-primary' : 'border-gray-300'
-                    }`}
+                    className={`w-12 h-12 rounded border-2 overflow-hidden transition-all ${idx === currentImageIndex ? 'border-green-primary' : 'border-gray-300'
+                      }`}
                   >
                     <img src={img.imageUrl} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
                   </button>
@@ -143,28 +164,36 @@ const ListingDetailPage = () => {
           <h1 className="text-4xl font-bold text-green-dark mt-2 mb-4">{listing.title}</h1>
           <p className="text-gray-600 mb-4">Publicado por: <span className="font-semibold">{listing.authorName}</span></p>
           <p className="text-gray-700 text-lg mb-6">{listing.description}</p>
-          
+
           <div className="bg-gray-100 p-4 rounded-lg mb-6">
             <p className="text-3xl font-extrabold text-green-primary">{listing.unitCredits} créditos</p>
             <p className="text-sm text-gray-600">por {listing.unitLabel}</p>
           </div>
-          
+
           <div className="flex flex-col gap-3 mt-6">
             {isAuthenticated && !isOwner && listing.status === ListingStatus.ACTIVE && (
-              <button
-                onClick={() => setIsConfirming(true)}
-                className="w-full bg-green-primary hover:bg-green-dark text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors"
-              >
-                Intercambiar ahora
-              </button>
+              <>
+                <button
+                  onClick={() => setIsConfirming(true)}
+                  className="w-full bg-green-primary hover:bg-green-dark text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors"
+                >
+                  Intercambiar ahora
+                </button>
+                <button
+                  onClick={() => setIsReporting(true)}
+                  className="w-full text-red-600 border border-red-200 hover:bg-red-50 font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+                >
+                  ⚠️ Reportar Publicación
+                </button>
+              </>
             )}
-            
+
             {isOwner && listing.status === ListingStatus.ACTIVE && (
-              <Link 
-                 to={`/listings/edit/${listing.id}`}
-                 className="w-full text-center border-2 border-blue-500 text-blue-600 hover:bg-blue-50 font-bold py-3 px-4 rounded-lg text-lg transition-colors"
+              <Link
+                to={`/listings/edit/${listing.id}`}
+                className="w-full text-center border-2 border-blue-500 text-blue-600 hover:bg-blue-50 font-bold py-3 px-4 rounded-lg text-lg transition-colors"
               >
-                 ✏️ Editar Publicación
+                ✏️ Editar Publicación
               </Link>
             )}
           </div>
@@ -185,6 +214,28 @@ const ListingDetailPage = () => {
               <button onClick={() => setIsConfirming(false)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
               <button onClick={handleExchange} disabled={exchangeLoading} className="px-4 py-2 bg-green-primary text-white rounded hover:bg-green-dark disabled:bg-gray-400">
                 {exchangeLoading ? 'Procesando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isReporting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4 text-red-600">Reportar Publicación</h2>
+            <p className="text-gray-600 mb-4 text-sm">Describe el problema con esta publicación (spam, contenido inapropiado, fraude, etc.).</p>
+            <textarea
+              className="w-full border rounded p-2 mb-4"
+              rows={4}
+              placeholder="Motivo del reporte..."
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+            />
+            <div className="flex justify-end space-x-4">
+              <button onClick={() => setIsReporting(false)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
+              <button onClick={handleReport} disabled={reportLoading} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400">
+                {reportLoading ? 'Enviando...' : 'Enviar Reporte'}
               </button>
             </div>
           </div>

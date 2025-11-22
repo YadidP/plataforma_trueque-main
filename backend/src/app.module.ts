@@ -17,6 +17,7 @@ import { join } from 'path';
 import { SubcategoriesModule } from './subcategories/subcategories.module';
 import { ImpactModule } from './impact/impact.module';
 import { MaterialsModule } from './materials/materials.module';
+import { ClaimsModule } from './claims/claims.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { MaterialsModule } from './materials/materials.module';
     SubcategoriesModule,
     ImpactModule,
     MaterialsModule,
+    ClaimsModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

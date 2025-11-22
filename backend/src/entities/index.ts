@@ -15,3 +15,4 @@ export * from './impact-equivalence.entity';
 export * from './impact-metric.entity';
 export * from './subscription.entity';
 export * from './user-subscription.entity';
+export * from './claim.entity';

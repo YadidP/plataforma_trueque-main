@@ -117,12 +117,12 @@ export const createListing = async (formData: FormData): Promise<Listing> => {
 };
 
 export const updateListing = async (id: number, formData: FormData): Promise<Listing> => {
-    const response = await http.patch(`/listings/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
+  const response = await http.patch(`/listings/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
 };
 
 // --- EXCHANGES & IMPACT ---
@@ -175,4 +175,8 @@ export const getClaimsReport = async (params: DateRangeParams = {}): Promise<Cla
 export const getAdvancedReport = async (): Promise<AdvancedReport> => {
   const response = await http.get('/reports/admin/advanced');
   return response.data;
+};
+
+export const createClaim = async (data: { exchangeId?: number; listingId?: number; reason: string }): Promise<void> => {
+  await http.post('/claims', data);
 };
