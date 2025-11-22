@@ -179,4 +179,28 @@ export const getAdvancedReport = async (): Promise<AdvancedReport> => {
 
 export const createClaim = async (data: { exchangeId?: number; listingId?: number; reason: string }): Promise<void> => {
   await http.post('/claims', data);
+};// --- ADMIN CLAIMS MANAGEMENT ---
+export const getAllClaims = async (): Promise<any[]> => {
+  const response = await http.get('/claims');
+  return response.data;
+};
+
+export const getActiveClaims = async (): Promise<any[]> => {
+  const response = await http.get('/claims/active');
+  return response.data;
+};
+
+export const resolveClaim = async (claimId: number): Promise<void> => {
+  await http.patch(/claims//resolve);
+};
+
+// --- ADMIN STATISTICS ---
+export const getPublicationsCount = async (): Promise<{ total: number }> => {
+  const response = await http.get('/admin/stats/publications');
+  return response.data;
+};
+
+export const getPublicationsVsExchanges = async (params: DateRangeParams = {}): Promise<any[]> => {
+  const response = await http.get('/admin/stats/publications-vs-exchanges', { params });
+  return response.data;
 };

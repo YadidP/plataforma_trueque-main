@@ -172,3 +172,38 @@ export interface AdvancedReport {
   trends: MonthlyTrend[];
   topUsers: TopUser[];
 }
+
+// Claims management interfaces
+export interface ClaimDetail {
+  id: number;
+  exchangeId: number | null;
+  listingId: number | null;
+  claimantId: number;
+  claimantName: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  resolvedAt: string | null;
+  exchangeDetails?: {
+    id: number;
+    listingTitle: string;
+    buyerName: string;
+    sellerName: string;
+  };
+  listingDetails?: {
+    id: number;
+    title: string;
+    authorName: string;
+  };
+}
+
+// Publications statistics interfaces
+export interface PublicationsStats {
+  total: number;
+}
+
+export interface PublicationsVsExchangesData {
+  monthLabel: string;
+  listingsCount: number;
+  exchangesCount: number;
+}

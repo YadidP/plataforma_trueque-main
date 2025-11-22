@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AdminService } from './admin.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { AdminService } from './admin.service';
+import { Listing } from '../entities/listing.entity';
+import { Exchange } from '../entities/exchange.entity';
 
 @Module({
+  imports: [TypeOrmModule.forFeature([Listing, Exchange])],
   controllers: [AdminController],
-  providers: [AdminService, RolesGuard],
+  providers: [AdminService],
 })
-export class AdminModule {}
+export class AdminModule { }
