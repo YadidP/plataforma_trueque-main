@@ -191,7 +191,7 @@ export const getActiveClaims = async (): Promise<any[]> => {
 };
 
 export const resolveClaim = async (claimId: number): Promise<void> => {
-  await http.patch(/claims//resolve);
+  await http.patch(`/claims/${claimId}/resolve`);
 };
 
 // --- ADMIN STATISTICS ---
