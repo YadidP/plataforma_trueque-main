@@ -123,17 +123,17 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Lote Ropa de Bebé (0-6 meses)') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote Ropa de Bebé (0-6 meses)', 'Ropa en excelente estado, casi nueva.', (SELECT id FROM categories WHERE name='Ropa y Accesorios'), (SELECT id FROM subcategories WHERE name='Camisetas'), 25, '/uploads/ropa.jpg', NOW() - INTERVAL '1 day', 'activa');
+        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote Ropa de Bebé (0-6 meses)', 'Ropa en excelente estado, casi nueva.', (SELECT id FROM categories WHERE name='Ropa y Accesorios'), (SELECT id FROM subcategories WHERE name='Camiloetas'), 25, '/uploads/ropa.jpg', NOW() - INTERVAL '1 day', 'activa');
     END IF;
 
     -- Publicaciones que estarán ya intercambiadas
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Lote de 5 Novelas de Ficción') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote de 5 Novelas de Ficción', 'Colección de bolsillo. Autores varios.', (SELECT id FROM categories WHERE name='Libros y Papelería'), (SELECT id FROM subcategories WHERE name='Novelas'), 15, '/uploads/libros.jpg', NOW() - INTERVAL '55 days', 'intercambiada');
+        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote de 5 Novelas de Ficción', 'Colección de bolsillo. Autores varios.', (SELECT id FROM categories WHERE name='Libros y Papelería'), (SELECT id FROM subcategories WHERE name='Novelas'), 15, '/uploads/libros.jpg', NOW() - INTERVAL '55 days', 'activa');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Monitor Gamer 24" Full HD') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='lucia@eco.com'), 'Monitor Gamer 24" Full HD', '144Hz, 1ms de respuesta. Funciona perfectamente.', (SELECT id FROM categories WHERE name='Electrónica'), (SELECT id FROM subcategories WHERE name='Laptops'), 80, '/uploads/monitor.jpg', NOW() - INTERVAL '20 days', 'intercambiada');
+        ((SELECT id FROM users WHERE email='lucia@eco.com'), 'Monitor Gamer 24" Full HD', '144Hz, 1ms de respuesta. Funciona perfectamente.', (SELECT id FROM categories WHERE name='Electrónica'), (SELECT id FROM subcategories WHERE name='Laptops'), 80, '/uploads/monitor.jpg', NOW() - INTERVAL '20 days', 'activa');
     END IF;
 END $$;
 
@@ -163,8 +163,8 @@ BEGIN
 END $$;
 -- Balance esperado Roberto: 15 (bono+incentivo) + 200 (compra) = 215
 
--- 4. INTERCAMBIOS (USANDO EL PROCEDIMIENTO ALMACENADO)
--- Esto debita al comprador, acredita al vendedor, crea el 'exchange' y el 'log'.
+-- 4. INTERCAMBIOS (MANUAL CON FECHAS RETROACTIVAS PARA GRÁFICOS)
+-- Creamos intercambios con exchange_date retroactivo para mostrar distribución en el tiempo
 DO $$
 DECLARE
     v_carlos_id INT := (SELECT id FROM users WHERE email = 'carlos@eco.com');
@@ -173,17 +173,57 @@ DECLARE
     v_lucia_id INT := (SELECT id FROM users WHERE email = 'lucia@eco.com');
     v_listing_libros_id INT := (SELECT id FROM listings WHERE title = 'Lote de 5 Novelas de Ficción');
     v_listing_monitor_id INT := (SELECT id FROM listings WHERE title = 'Monitor Gamer 24" Full HD');
+    v_libros_credits NUMERIC;
+    v_monitor_credits NUMERIC;
+    v_balance NUMERIC;
 BEGIN
     -- Solo se registra si no existe ya el intercambio (evita duplicados y errores)
     IF v_listing_libros_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM exchanges WHERE listing_id = v_listing_libros_id) THEN
-        -- Se cambia el estado a 'activa' para que el SP funcione, ya que el SP la pone como 'intercambiada'
-        UPDATE listings SET status = 'activa' WHERE id = v_listing_libros_id;
-        CALL sp_registrar_intercambio(v_carlos_id, v_listing_libros_id, 1);
+        -- Obtener el precio de la publicación
+        SELECT unit_credits INTO v_libros_credits FROM listings WHERE id = v_listing_libros_id;
+        
+        -- Debitar comprador (Carlos)
+        SELECT balance INTO v_balance FROM wallets WHERE user_id = v_carlos_id FOR UPDATE;
+        UPDATE wallets SET balance = balance - v_libros_credits WHERE user_id = v_carlos_id RETURNING balance INTO v_balance;
+        INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
+        VALUES (v_carlos_id, 'intercambio_debito', -v_libros_credits, v_balance, v_listing_libros_id);
+        
+        -- Acreditar vendedor (Ana)
+        SELECT balance INTO v_balance FROM wallets WHERE user_id = v_ana_id FOR UPDATE;
+        UPDATE wallets SET balance = balance + v_libros_credits WHERE user_id = v_ana_id RETURNING balance INTO v_balance;
+        INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
+        VALUES (v_ana_id, 'intercambio_credito', v_libros_credits, v_balance, v_listing_libros_id);
+        
+        -- Registrar intercambio con fecha retroactiva (50 días atrás)
+        INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, exchange_date)
+        VALUES (v_listing_libros_id, v_carlos_id, v_ana_id, 1, v_libros_credits, v_libros_credits, NOW() - INTERVAL '50 days');
+        
+        -- Cerrar publicación
+        UPDATE listings SET status = 'intercambiada' WHERE id = v_listing_libros_id;
     END IF;
     
     IF v_listing_monitor_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM exchanges WHERE listing_id = v_listing_monitor_id) THEN
-        UPDATE listings SET status = 'activa' WHERE id = v_listing_monitor_id;
-        CALL sp_registrar_intercambio(v_roberto_id, v_listing_monitor_id, 1);
+        -- Obtener el precio de la publicación
+        SELECT unit_credits INTO v_monitor_credits FROM listings WHERE id = v_listing_monitor_id;
+        
+        -- Debitar comprador (Roberto)
+        SELECT balance INTO v_balance FROM wallets WHERE user_id = v_roberto_id FOR UPDATE;
+        UPDATE wallets SET balance = balance - v_monitor_credits WHERE user_id = v_roberto_id RETURNING balance INTO v_balance;
+        INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
+        VALUES (v_roberto_id, 'intercambio_debito', -v_monitor_credits, v_balance, v_listing_monitor_id);
+        
+        -- Acreditar vendedor (Lucia)
+        SELECT balance INTO v_balance FROM wallets WHERE user_id = v_lucia_id FOR UPDATE;
+        UPDATE wallets SET balance = balance + v_monitor_credits WHERE user_id = v_lucia_id RETURNING balance INTO v_balance;
+        INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
+        VALUES (v_lucia_id, 'intercambio_credito', v_monitor_credits, v_balance, v_listing_monitor_id);
+        
+        -- Registrar intercambio con fecha retroactiva (18 días atrás)
+        INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, exchange_date)
+        VALUES (v_listing_monitor_id, v_roberto_id, v_lucia_id, 1, v_monitor_credits, v_monitor_credits, NOW() - INTERVAL '18 days');
+        
+        -- Cerrar publicación
+        UPDATE listings SET status = 'intercambiada' WHERE id = v_listing_monitor_id;
     END IF;
 END $$;
 -- Balance esperado Roberto: 215 - 80 (monitor) = 135
