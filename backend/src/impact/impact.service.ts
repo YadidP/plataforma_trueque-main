@@ -13,7 +13,7 @@ export class ImpactService {
     private impactMetricRepository: Repository<ImpactMetric>,
     @InjectRepository(ImpactEquivalence)
     private impactEquivalenceRepository: Repository<ImpactEquivalence>,
-  ) {}
+  ) { }
 
   async calculateImpactPreview(impactDto: ImpactDto): Promise<any[]> {
     const { material_id, quantity, quantity_unit } = impactDto;
@@ -29,12 +29,12 @@ export class ImpactService {
 
     return equivalences.map(eq => ({
       code: eq.metric.code,
-      metric: eq.metric.name,
+      name: eq.metric.name,
       unit: eq.metric.unit,
       value: parseFloat(((quantity / parseFloat(eq.baseQuantity.toString())) * parseFloat(eq.impactValue.toString())).toFixed(2)),
     })).sort((a, b) => {
-      // Ordenar: CO2, WATER, ENERGY, WASTE, PESTICIDES
-      const order = { 'CO2': 0, 'WATER': 1, 'ENERGY': 2, 'WASTE': 3, 'PESTICIDES': 4 };
+      // Ordenar: CO2, WATER, ENERGY, WASTE, TREES
+      const order: Record<string, number> = { 'CO2': 0, 'WATER': 1, 'ENERGY': 2, 'WASTE': 3, 'TREES': 4 };
       return (order[a.code] ?? 99) - (order[b.code] ?? 99);
     });
   }

@@ -10,7 +10,7 @@ export class ExchangesService {
     private dataSource: DataSource,
     @InjectRepository(Exchange)
     private exchangesRepository: Repository<Exchange>,
-  ) {}
+  ) { }
 
   async create(buyerId: number, createExchangeDto: CreateExchangeDto) {
     try {
@@ -20,45 +20,80 @@ export class ExchangesService {
         'CALL sp_registrar_intercambio($1, $2, $3)',
         [buyerId, createExchangeDto.listingId, createExchangeDto.quantity],
       );
-      return { message: 'Intercambio registrado con éxito.' };
+
+      // NUEVO: Obtener el último intercambio creado con su impacto
+      const lastExchange = await this.dataSource.query(`
+        SELECT 
+          e.id,
+          e.credits_total,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'code', ei.metric_code,
+                'name', ei.metric_name,
+                'unit', ei.metric_unit,
+                'value', ei.impact_value
+              )
+            ) FILTER (WHERE ei.id IS NOT NULL),
+            '[]'
+          ) as impacts
+        FROM exchanges e
+        LEFT JOIN exchange_impacts ei ON e.id = ei.exchange_id
+        WHERE e.buyer_id = $1
+          AND e.listing_id = $2
+        GROUP BY e.id, e.credits_total
+        ORDER BY e.exchange_date DESC
+        LIMIT 1
+      `, [buyerId, createExchangeDto.listingId]);
+
+      return {
+        message: 'Intercambio registrado con éxito.',
+        exchange: lastExchange[0]
+      };
     } catch (error) {
-        console.error("Error al ejecutar sp_registrar_intercambio:", error);
-        // Capturar errores específicos de la base de datos (RAISE EXCEPTION)
-        if (error.message.includes('Saldo insuficiente')) {
-            throw new ConflictException('Saldo insuficiente para completar esta operación.');
-        }
-        if (error.message.includes('no está activa')) {
-            throw new ConflictException('La publicación no está disponible para intercambio.');
-        }
-        if (error.message.includes('no puede comprar su propia publicación')) {
-            throw new ConflictException('No puedes intercambiar tu propia publicación.');
-        }
-        throw new InternalServerErrorException('Ocurrió un error al procesar el intercambio.');
+      console.error("Error al ejecutar sp_registrar_intercambio:", error);
+      // Capturar errores específicos de la base de datos (RAISE EXCEPTION)
+      if (error.message.includes('Saldo insuficiente')) {
+        throw new ConflictException('Saldo insuficiente para completar esta operación.');
+      }
+      if (error.message.includes('no está activa')) {
+        throw new ConflictException('La publicación no está disponible para intercambio.');
+      }
+      if (error.message.includes('no puede comprar su propia publicación')) {
+        throw new ConflictException('No puedes intercambiar tu propia publicación.');
+      }
+      throw new InternalServerErrorException('Ocurrió un error al procesar el intercambio.');
     }
   }
 
   async findForUser(userId: number) {
     const exchanges = await this.exchangesRepository.find({
-        where: [
-            { buyerId: userId },
-            { sellerId: userId },
-        ],
-        relations: ['listing', 'buyer', 'seller'],
-        order: { exchangeDate: 'DESC' },
+      where: [
+        { buyerId: userId },
+        { sellerId: userId },
+      ],
+      relations: ['listing', 'buyer', 'seller', 'impacts'], // Add 'impacts' relation
+      order: { exchangeDate: 'DESC' },
     });
 
     // Mapeamos el resultado para que coincida con la interfaz `Exchange` del frontend
     return exchanges.map(ex => ({
-        id: ex.id,
-        listingId: ex.listingId,
-        listingTitle: ex.listing.title,
-        buyerId: ex.buyerId,
-        buyerName: ex.buyer.name,
-        sellerId: ex.sellerId,
-        sellerName: ex.seller.name,
-        quantity: ex.quantity,
-        totalCredits: Number(ex.creditsTotal),
-        date: ex.exchangeDate.toISOString(),
+      id: ex.id,
+      listingId: ex.listingId,
+      listingTitle: ex.listing.title,
+      buyerId: ex.buyerId,
+      buyerName: ex.buyer.name,
+      sellerId: ex.sellerId,
+      sellerName: ex.seller.name,
+      quantity: ex.quantity,
+      totalCredits: Number(ex.creditsTotal),
+      date: ex.exchangeDate.toISOString(),
+      impacts: ex.impacts.map(impact => ({ // Include impacts
+        code: impact.metricCode,
+        name: impact.metricName,
+        value: Number(impact.impactValue),
+        unit: impact.metricUnit,
+      })),
     }));
   }
 }

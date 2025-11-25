@@ -274,10 +274,16 @@ const CreateListingForm: React.FC = () => {
             </div>
             {impactLoading && <p className="text-green-dark">Calculando impacto...</p>}
             {impactPreview && impactPreview.length > 0 && (
-              <div className="p-4 bg-green-50 rounded">
-                <p className="text-green-dark font-semibold">
-                  Impacto: {impactPreview.map(m => `${m.value}${m.unit} de ${m.code}`).join(", ")}
-                </p>
+              <div className="p-4 bg-green-50 rounded border border-green-200">
+                <p className="text-green-800 font-bold mb-2">🌿 Impacto Ambiental Estimado:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {impactPreview.map(m => (
+                    <div key={m.code} className="flex items-center text-sm text-green-700">
+                      <span className="font-semibold mr-1">{m.value} {m.unit}</span>
+                      <span>{m.name || m.code}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             <div className="flex gap-4">

@@ -1,0 +1,177 @@
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "en_US.utf8".
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+fixing permissions on existing directory /var/lib/postgresql/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Etc/UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+
+Success. You can now start the database server using:
+
+    pg_ctl -D /var/lib/postgresql/data -l logfile start
+
+waiting for server to start....2025-11-24 22:09:58.331 UTC [48] LOG:  starting PostgreSQL 17.7 (Debian 17.7-3.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2025-11-24 22:09:58.335 UTC [48] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2025-11-24 22:09:58.347 UTC [51] LOG:  database system was shut down at 2025-11-24 22:09:58 UTC
+2025-11-24 22:09:58.355 UTC [48] LOG:  database system is ready to accept connections
+ done
+server started
+CREATE DATABASE
+
+
+/usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/01_schema.sql
+CREATE EXTENSION
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+
+
+/usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/02_functions_and_procedures.sql
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE PROCEDURE
+CREATE PROCEDURE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+
+
+/usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/03_triggers.sql
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+DROP TRIGGER
+CREATE TRIGGER
+
+
+/usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/04_seeds.sql
+INSERT 0 10
+2025-11-24 22:09:58.753 UTC [67] ERROR:  syntax error at or near "DO" at character 2688
+2025-11-24 22:09:58.753 UTC [67] STATEMENT:  INSERT INTO subcategories (category_id, name) VALUES
+	-- Electrónica
+	((SELECT id FROM categories WHERE name = 'Electrónica'), 'Smartphones'),
+	((SELECT id FROM categories WHERE name = 'Electrónica'), 'Laptops'),
+	((SELECT id FROM categories WHERE name = 'Electrónica'), 'Audio y Video'),
+	((SELECT id FROM categories WHERE name = 'Electrónica'), 'Accesorios'),
+	-- Ropa y Accesorios
+	((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Camisetas'),
+	((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Pantalones'),
+	((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Calzado'),
+	((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Bolsos y Carteras'),
+	((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Joyas'),
+	-- Libros y Papelería
+	((SELECT id FROM categories WHERE name = 'Libros y Papelería'), 'Novelas'),
+	((SELECT id FROM categories WHERE name = 'Libros y Papelería'), 'Texto'),
+	((SELECT id FROM categories WHERE name = 'Libros y Papelería'), 'Material Escolar'),
+	((SELECT id FROM categories WHERE name = 'Libros y Papelería'), 'Arte y Manualidades'),
+	-- Hogar y Decoración
+	((SELECT id FROM categories WHERE name = 'Hogar y Decoración'), 'Muebles'),
+	((SELECT id FROM categories WHERE name = 'Hogar y Decoración'), 'Decoración'),
+	((SELECT id FROM categories WHERE name = 'Hogar y Decoración'), 'Cocina y Comedor'),
+	((SELECT id FROM categories WHERE name = 'Hogar y Decoración'), 'Jardinería'),
+	-- Deportes y Ocio
+	((SELECT id FROM categories WHERE name = 'Deportes y Ocio'), 'Bicicletas'),
+	((SELECT id FROM categories WHERE name = 'Deportes y Ocio'), 'Equipo de Camping'),
+	((SELECT id FROM categories WHERE name = 'Deportes y Ocio'), 'Balones y Pelotas'),
+	((SELECT id FROM categories WHERE name = 'Deportes y Ocio'), 'Juegos de Mesa'),
+	-- Juguetes y Niños
+	((SELECT id FROM categories WHERE name = 'Juguetes y Niños'), 'Figuras de Acción'),
+	((SELECT id FROM categories WHERE name = 'Juguetes y Niños'), 'Muñecas y Accesorios'),
+	((SELECT id FROM categories WHERE name = 'Juguetes y Niños'), 'Juguetes Educativos'),
+	((SELECT id FROM categories WHERE name = 'Juguetes y Niños'), 'Ropa Infantil'),
+	-- Herramientas y Bricolaje
+	((SELECT id FROM categories WHERE name = 'Herramientas y Bricolaje'), 'Herramientas Manuales'),
+	((SELECT id FROM categories WHERE name = 'Herramientas y Bricolaje'), 'Herramientas Eléctricas'),
+	((SELECT id FROM categories WHERE name = 'Herramientas y Bricolaje'), 'Materiales de Construcción'),
+	-- Salud y Belleza
+	-- La creación de publicaciones dispara 'trg_incentivo_publicacion' (+5 créditos).
+	-- Balances esperados después de esto: 15 créditos para cada publicador.
+	DO $$
+	BEGIN
+	    -- Publicaciones que estarán activas
+	    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Sillas de Madera Restauradas') THEN
+	        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
+	        ((SELECT id FROM users WHERE email='emprendedor@eco.com'), 'Sillas de Madera Restauradas', 'Set de 4 sillas de comedor, restauradas y barnizadas.', (SELECT id FROM categories WHERE name='Hogar y Decoración'), (SELECT id FROM subcategories WHERE name='Muebles'), 50, '/uploads/sillas.jpg', NOW() - INTERVAL '60 days', 'activa');
+	    END IF;
+	    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Bicicleta de Montaña R26') THEN
+	        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
+	        ((SELECT id FROM users WHERE email='carlos@eco.com'), 'Bicicleta de Montaña R26', 'Marca "Vento", 18 velocidades. Le falta un pedal.', (SELECT id FROM categories WHERE name='Deportes y Ocio'), (SELECT id FROM subcategories WHERE name='Muebles'), 120, '/uploads/bici.jpg', NOW() - INTERVAL '25 days', 'activa');
+	    END IF;
+	    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Clases de Matemáticas Online') THEN
+	        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
+	        ((SELECT id FROM users WHERE email='roberto@eco.com'), 'Clases de Matemáticas Online', 'Nivel secundaria y preparatoria. 1 hora por Zoom.', (SELECT id FROM categories WHERE name='Servicios'), (SELECT id FROM subcategories WHERE name='Clases Particulares'), 20, '/uploads/clases.jpg', NOW() - INTERVAL '5 days', 'activa');
+	    END IF;
+	     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Jabones Artesanales Ecológicos') THEN
+	        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
+	        ((SELECT id FROM users WHERE email='tienda@eco.com'), 'Jabones Artesanales Ecológicos', 'Pack de 3 jabones. Lavanda, avena y romero.', (SELECT id FROM categories WHERE name='Salud y Belleza'), (SELECT id FROM subcategories WHERE name='Muebles'), 10, '/uploads/jabones.jpg', NOW() - INTERVAL '3 days', 'activa');
+	    END IF;
+	    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Mesa de Centro de Roble') THEN
+	        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
+	        ((SELECT id FROM users WHERE email='emprendedor@eco.com'), 'Mesa de Centro de Roble', 'Madera maciza de roble reciclada. Estilo rústico.', (SELECT id FROM categories WHERE name='Hogar y Decoración'), (SELECT id FROM subcategories WHERE name='Muebles'), 45, '/uploads/mesa.jpg', NOW() - INTERVAL '2 days', 'activa');
+	    END IF;
+	    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Lote Ropa de Bebé (0-6 meses)') THEN
+	        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
+	        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote Ropa de Bebé (0-6 meses)', 'Ropa en excelente estado, casi nueva.', (SELECT id FROM categories WHERE name='Ropa y Accesorios'), (SELECT id FROM subcategories WHERE name='Camiloetas'), 25, '/uploads/ropa.jpg', NOW() - INTERVAL '1 day', 'activa');
+	    END IF;
+	
+	    -- Publicaciones que estarán ya intercambiadas
+	    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Lote de 5 Novelas de Ficción') THEN
+	        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
+	        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote de 5 Novelas de Ficción', 'Colección de bolsillo. Autores varios.', (SELECT id FROM categories WHERE name='Libros y Papelería'), (SELECT id FROM subcategories WHERE name='Novelas'), 15, '/uploads/libros.jpg', NOW() - INTERVAL '55 days', 'activa');
+	    END IF;
+	    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Monitor Gamer 24" Full HD') THEN
+	        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
+	        ((SELECT id FROM users WHERE email='lucia@eco.com'), 'Monitor Gamer 24" Full HD', '144Hz, 1ms de respuesta. Funciona perfectamente.', (SELECT id FROM categories WHERE name='Electrónica'), (SELECT id FROM subcategories WHERE name='Laptops'), 80, '/uploads/monitor.jpg', NOW() - INTERVAL '20 days', 'activa');
+	    END IF;
+	END $$;
+
+PostgreSQL Database directory appears to contain a database; Skipping initialization
+

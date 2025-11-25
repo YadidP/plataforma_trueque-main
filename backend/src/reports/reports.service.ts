@@ -7,10 +7,50 @@ import { UserReportDto, MonetizationReportDto, ImpactReportDto, ClaimsReportDto,
 export class ReportsService {
     constructor(private dataSource: DataSource) { }
 
-    // Lógica para el Dashboard del Usuario (sin cambios)
+    // Lógica para el Dashboard del Usuario
     async getUserImpactMetrics(userId: number): Promise<any> {
-        // ... tu lógica actual para el impacto personal ...
-        return { reusedItems: 10, co2Saved: 15.5, serviceHours: 5 }; // Ejemplo
+        // 1. Obtener métricas básicas (reusedItems, serviceHours)
+        const basicStats = await this.dataSource.query(`
+            SELECT 
+                COUNT(e.id) as reused_items,
+                COALESCE(SUM(CASE WHEN c.name = 'Servicios' THEN l.quantity * e.quantity ELSE 0 END), 0) as service_hours
+            FROM exchanges e
+            JOIN listings l ON e.listing_id = l.id
+            JOIN categories c ON l.category_id = c.id
+            WHERE e.buyer_id = $1 OR e.seller_id = $1
+        `, [userId]);
+
+        // 2. Calcular impacto detallado usando equivalencias
+        const detailedImpact = await this.dataSource.query(`
+            SELECT
+                im.code,
+                im.name,
+                im.unit,
+                SUM(
+                    (e.quantity * l.quantity) / ie.base_quantity * ie.impact_value
+                ) as value
+            FROM exchanges e
+            JOIN listings l ON e.listing_id = l.id
+            JOIN impact_equivalences ie ON l.material_id = ie.material_id
+            JOIN impact_metrics im ON ie.metric_id = im.id
+            WHERE e.buyer_id = $1 OR e.seller_id = $1
+            GROUP BY im.code, im.name, im.unit
+        `, [userId]);
+
+        const stats = basicStats[0];
+        const co2Metric = detailedImpact.find((m: any) => m.code === 'CO2');
+
+        return {
+            reusedItems: parseInt(stats.reused_items, 10) || 0,
+            serviceHours: parseFloat(stats.service_hours) || 0,
+            co2Saved: co2Metric ? parseFloat(co2Metric.value) : 0,
+            detailedMetrics: detailedImpact.map((m: any) => ({
+                code: m.code,
+                name: m.name,
+                unit: m.unit,
+                value: parseFloat(m.value)
+            }))
+        };
     }
 
     // --- Lógica para el Panel de Administración ---
@@ -43,7 +83,7 @@ export class ReportsService {
         const { startDate, endDate } = this.prepareDates(dateRange);
         const result = await this.dataSource.query('SELECT * FROM fn_report_impact($1, $2)', [startDate, endDate]);
         return {
-            impactByCategory: result.map(row => ({
+            impactByCategory: result.map((row: any) => ({
                 categoryName: row.category_name,
                 itemsExchanged: parseInt(row.items_exchanged, 10),
             })),
@@ -54,7 +94,7 @@ export class ReportsService {
         const { startDate, endDate } = this.prepareDates(dateRange);
         const result = await this.dataSource.query('SELECT * FROM fn_report_claims($1, $2)', [startDate, endDate]);
         return {
-            claimsByStatus: result.map(row => ({
+            claimsByStatus: result.map((row: any) => ({
                 status: row.status,
                 count: parseInt(row.count, 10),
             })),
@@ -66,14 +106,14 @@ export class ReportsService {
         const topUsersResult = await this.dataSource.query('SELECT * FROM fn_report_top_users()');
 
         return {
-            trends: trendsResult.map(row => ({
+            trends: trendsResult.map((row: any) => ({
                 monthLabel: row.month_label,
                 revenue: Number(row.revenue),
                 newUsers: Number(row.new_users),
                 churnedUsers: Number(row.churned_users),
                 activeUsers: Number(row.active_users),
             })),
-            topUsers: topUsersResult.map(row => ({
+            topUsers: topUsersResult.map((row: any) => ({
                 userName: row.user_name,
                 score: Number(row.score),
                 exchangesCount: Number(row.exchanges_count),

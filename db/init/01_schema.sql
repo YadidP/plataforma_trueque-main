@@ -190,3 +190,16 @@ CREATE TABLE IF NOT EXISTS claims (
 
 CREATE INDEX IF NOT EXISTS idx_claims_exchange_id ON claims(exchange_id);
 CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
+-- Tabla para registrar impacto ambiental de cada intercambio
+CREATE TABLE IF NOT EXISTS exchange_impacts (
+    id SERIAL PRIMARY KEY,
+    exchange_id BIGINT NOT NULL REFERENCES exchanges(id) ON DELETE CASCADE,
+    metric_code VARCHAR(50) NOT NULL,
+    metric_name VARCHAR(100) NOT NULL,
+    metric_unit VARCHAR(50) NOT NULL,
+    impact_value NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_exchange_impacts_exchange ON exchange_impacts(exchange_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_impacts_metric ON exchange_impacts(metric_code);

@@ -7,10 +7,8 @@ const Layout = () => {
   const location = useLocation();
   const [key, setKey] = useState(0);
 
-  // Forzar re-render cuando cambia la ruta
   useEffect(() => {
     setKey(prev => prev + 1);
-    // Scroll al top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 

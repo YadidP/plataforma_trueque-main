@@ -1,7 +1,7 @@
--- db/init/04_seeds.sql (VERSIÓN CORREGIDA Y MEJORADA)
--- Se usan los procedimientos almacenados para garantizar la integridad de los datos.
+-- db/init/04_seeds.sql
+-- Datos iniciales para la plataforma de trueque
 
--- Insertar Categorías, Subcategorías, Materiales y Métricas (sin cambios)
+-- 1. CATEGORÍAS Y SUBCATEGORÍAS
 INSERT INTO categories (name) VALUES
 ('Electrónica'), ('Ropa y Accesorios'), ('Libros y Papelería'), ('Hogar y Decoración'),
 ('Deportes y Ocio'), ('Juguetes y Niños'), ('Herramientas y Bricolaje'),
@@ -52,94 +52,68 @@ INSERT INTO subcategories (category_id, name) VALUES
 -- Alimentos y Bebidas
 ((SELECT id FROM categories WHERE name = 'Alimentos y Bebidas'), 'Productos No Perecederos'),
 ((SELECT id FROM categories WHERE name = 'Alimentos y Bebidas'), 'Bebidas Artesanales'),
-((SELECT id FROM categories WHERE name = 'Alimentos y Bebidas'), 'Conservas'),
 -- Servicios
 ((SELECT id FROM categories WHERE name = 'Servicios'), 'Clases Particulares'),
 ((SELECT id FROM categories WHERE name = 'Servicios'), 'Reparaciones'),
-((SELECT id FROM categories WHERE name = 'Servicios'), 'Asesoría y Consultoría'),
-((SELECT id FROM categories WHERE name = 'Servicios'), 'Cuidado de Mascotas')
-ON CONFLICT (category_id, name) DO NOTHING;
+((SELECT id FROM categories WHERE name = 'Servicios'), 'Asesorías');
 
-INSERT INTO materials (name) VALUES ('Plástico'), ('Metal'), ('Madera'), ('Tela (Algodón)'), ('Vidrio'), ('Papel') ON CONFLICT (name) DO NOTHING;
-INSERT INTO impact_metrics (code, name, unit) VALUES ('CO2', 'Dióxido de Carbono', 'kg'), ('WATER', 'Agua', 'L'), ('ENERGY', 'Energía', 'kWh') ON CONFLICT (code) DO NOTHING;
-INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
-((SELECT id FROM materials WHERE name = 'Plástico'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 3.5),
-((SELECT id FROM materials WHERE name = 'Tela (Algodón)'), (SELECT id FROM impact_metrics WHERE code = 'WATER'), 1, 'kg', 7500),
-((SELECT id FROM materials WHERE name = 'Papel'), (SELECT id FROM impact_metrics WHERE code = 'CO2'), 1, 'kg', 0.9)
-ON CONFLICT (material_id, metric_id, base_unit) DO NOTHING;
+-- 2. USUARIOS (password: 123456 para todos)
+INSERT INTO users (name, email, password_hash, role, created_at) VALUES
+    ('Admin User', 'admin@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'admin', NOW() - INTERVAL '6 months'),
+    ('Emprendedor Eco', 'emprendedor@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'emprendedor', NOW() - INTERVAL '5 months'),
+    ('Ana Lopez', 'ana@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'emprendedor', NOW() - INTERVAL '4 months'),
+    ('Carlos Perez', 'carlos@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '3 months'),
+    ('Lucia Mendez', 'lucia@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '2 months'),
+    ('Roberto Gomez', 'roberto@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '1 month'),
+    ('Maria Rodriguez', 'maria@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '20 days'),
+    ('Tienda Eco', 'tienda@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'emprendedor', NOW() - INTERVAL '10 days'),
+    ('Nuevo Usuario', 'nuevo@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '2 days');
 
--- Suscripciones
-INSERT INTO subscriptions (name, price_bs, duration_days, description) VALUES
-('Premium Mensual', 35.00, 30, 'Visibilidad mejorada.'),
-('Premium Trimestral', 90.00, 90, 'Ahorra un 15%.'),
-('Premium Anual', 300.00, 365, 'El mejor valor.')
-ON CONFLICT (name) DO NOTHING;
-
--- 1. CREACIÓN DE USUARIOS
--- La creación de usuarios dispara el trigger 'trg_bono_bienvenida' que les otorga 10 créditos iniciales.
+-- 3. PUBLICACIONES
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@eco.com') THEN
-    INSERT INTO users (name, email, password_hash, role, created_at) VALUES
-    ('Administrador', 'admin@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'admin', NOW() - INTERVAL '6 months'),
-    ('Emprendedor Verde', 'emprendedor@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'emprendedor', NOW() - INTERVAL '5 months'),
-    ('Usuario Ana', 'ana@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'usuario', NOW() - INTERVAL '4 months'),
-    ('ONG Ambiental', 'ong@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'ong', NOW() - INTERVAL '4 months'),
-    ('Carlos Perez', 'carlos@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'usuario', NOW() - INTERVAL '3 months'),
-    ('Lucia Mendez', 'lucia@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'usuario', NOW() - INTERVAL '2 months'),
-    ('Roberto Gomez', 'roberto@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'usuario', NOW() - INTERVAL '1 month'),
-    ('Maria Rodriguez', 'maria@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'usuario', NOW() - INTERVAL '20 days'),
-    ('Tienda Eco', 'tienda@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'emprendedor', NOW() - INTERVAL '10 days'),
-    ('Nuevo Usuario', 'nuevo@eco.com', '$2b$10$sB9PULm8WUb2evR.ZKsW9ex9xHXSyLnwkkUc2MOpM5Ye1FAF9B7/G', 'usuario', NOW() - INTERVAL '2 days');
-  END IF;
-END $$;
-
-
--- 2. PUBLICACIONES INICIALES
--- La creación de publicaciones dispara 'trg_incentivo_publicacion' (+5 créditos).
--- Balances esperados después de esto: 15 créditos para cada publicador.
-DO $$
-BEGIN
-    -- Publicaciones que estarán activas
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Sillas de Madera Restauradas') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
         ((SELECT id FROM users WHERE email='emprendedor@eco.com'), 'Sillas de Madera Restauradas', 'Set de 4 sillas de comedor, restauradas y barnizadas.', (SELECT id FROM categories WHERE name='Hogar y Decoración'), (SELECT id FROM subcategories WHERE name='Muebles'), 50, '/uploads/sillas.jpg', NOW() - INTERVAL '60 days', 'activa');
     END IF;
+    
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Bicicleta de Montaña R26') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='carlos@eco.com'), 'Bicicleta de Montaña R26', 'Marca "Vento", 18 velocidades. Le falta un pedal.', (SELECT id FROM categories WHERE name='Deportes y Ocio'), (SELECT id FROM subcategories WHERE name='Muebles'), 120, '/uploads/bici.jpg', NOW() - INTERVAL '25 days', 'activa');
+        ((SELECT id FROM users WHERE email='carlos@eco.com'), 'Bicicleta de Montaña R26', 'Marca "Vento", 18 velocidades. Le falta un pedal.', (SELECT id FROM categories WHERE name='Deportes y Ocio'), (SELECT id FROM subcategories WHERE name='Bicicletas'), 120, '/uploads/bici.jpg', NOW() - INTERVAL '25 days', 'activa');
     END IF;
+    
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Clases de Matemáticas Online') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
         ((SELECT id FROM users WHERE email='roberto@eco.com'), 'Clases de Matemáticas Online', 'Nivel secundaria y preparatoria. 1 hora por Zoom.', (SELECT id FROM categories WHERE name='Servicios'), (SELECT id FROM subcategories WHERE name='Clases Particulares'), 20, '/uploads/clases.jpg', NOW() - INTERVAL '5 days', 'activa');
     END IF;
-     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Jabones Artesanales Ecológicos') THEN
+    
+    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Jabones Artesanales Ecológicos') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='tienda@eco.com'), 'Jabones Artesanales Ecológicos', 'Pack de 3 jabones. Lavanda, avena y romero.', (SELECT id FROM categories WHERE name='Salud y Belleza'), (SELECT id FROM subcategories WHERE name='Muebles'), 10, '/uploads/jabones.jpg', NOW() - INTERVAL '3 days', 'activa');
+        ((SELECT id FROM users WHERE email='tienda@eco.com'), 'Jabones Artesanales Ecológicos', 'Pack de 3 jabones. Lavanda, avena y romero.', (SELECT id FROM categories WHERE name='Salud y Belleza'), (SELECT id FROM subcategories WHERE name='Cuidado de la Piel'), 10, '/uploads/jabones.jpg', NOW() - INTERVAL '3 days', 'activa');
     END IF;
+    
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Mesa de Centro de Roble') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
         ((SELECT id FROM users WHERE email='emprendedor@eco.com'), 'Mesa de Centro de Roble', 'Madera maciza de roble reciclada. Estilo rústico.', (SELECT id FROM categories WHERE name='Hogar y Decoración'), (SELECT id FROM subcategories WHERE name='Muebles'), 45, '/uploads/mesa.jpg', NOW() - INTERVAL '2 days', 'activa');
     END IF;
+    
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Lote Ropa de Bebé (0-6 meses)') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote Ropa de Bebé (0-6 meses)', 'Ropa en excelente estado, casi nueva.', (SELECT id FROM categories WHERE name='Ropa y Accesorios'), (SELECT id FROM subcategories WHERE name='Camiloetas'), 25, '/uploads/ropa.jpg', NOW() - INTERVAL '1 day', 'activa');
+        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote Ropa de Bebé (0-6 meses)', 'Ropa en excelente estado, casi nueva.', (SELECT id FROM categories WHERE name='Ropa y Accesorios'), (SELECT id FROM subcategories WHERE name='Camisetas'), 25, '/uploads/ropa.jpg', NOW() - INTERVAL '1 day', 'activa');
     END IF;
 
-    -- Publicaciones que estarán ya intercambiadas
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Lote de 5 Novelas de Ficción') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
         ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote de 5 Novelas de Ficción', 'Colección de bolsillo. Autores varios.', (SELECT id FROM categories WHERE name='Libros y Papelería'), (SELECT id FROM subcategories WHERE name='Novelas'), 15, '/uploads/libros.jpg', NOW() - INTERVAL '55 days', 'activa');
     END IF;
+    
     IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Monitor Gamer 24" Full HD') THEN
         INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
         ((SELECT id FROM users WHERE email='lucia@eco.com'), 'Monitor Gamer 24" Full HD', '144Hz, 1ms de respuesta. Funciona perfectamente.', (SELECT id FROM categories WHERE name='Electrónica'), (SELECT id FROM subcategories WHERE name='Laptops'), 80, '/uploads/monitor.jpg', NOW() - INTERVAL '20 days', 'activa');
     END IF;
 END $$;
 
-
--- 3. COMPRA DE CRÉDITOS (USANDO EL PROCEDIMIENTO ALMACENADO)
--- Esto actualiza 'wallets' y crea un 'credits_log' automáticamente.
+-- 4. COMPRA DE CRÉDITOS
 DO $$
 DECLARE
     v_carlos_id INT := (SELECT id FROM users WHERE email = 'carlos@eco.com');
@@ -147,7 +121,6 @@ DECLARE
     v_roberto_id INT := (SELECT id FROM users WHERE email = 'roberto@eco.com');
     v_nuevo_id INT := (SELECT id FROM users WHERE email = 'nuevo@eco.com');
 BEGIN
-    -- Solo se ejecuta si no hay ya una compra para ese usuario (evita duplicados)
     IF NOT EXISTS (SELECT 1 FROM credit_purchases WHERE user_id = v_carlos_id) THEN
         CALL sp_comprar_creditos(v_carlos_id, 100, 100.00, 'ref_carlos123');
     END IF;
@@ -161,10 +134,8 @@ BEGIN
         CALL sp_comprar_creditos(v_nuevo_id, 20, 20.00, 'ref_nuevo101');
     END IF;
 END $$;
--- Balance esperado Roberto: 15 (bono+incentivo) + 200 (compra) = 215
 
--- 4. INTERCAMBIOS (MANUAL CON FECHAS RETROACTIVAS PARA GRÁFICOS)
--- Creamos intercambios con exchange_date retroactivo para mostrar distribución en el tiempo
+-- 5. INTERCAMBIOS CON FECHAS RETROACTIVAS
 DO $$
 DECLARE
     v_carlos_id INT := (SELECT id FROM users WHERE email = 'carlos@eco.com');
@@ -177,58 +148,46 @@ DECLARE
     v_monitor_credits NUMERIC;
     v_balance NUMERIC;
 BEGIN
-    -- Solo se registra si no existe ya el intercambio (evita duplicados y errores)
     IF v_listing_libros_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM exchanges WHERE listing_id = v_listing_libros_id) THEN
-        -- Obtener el precio de la publicación
         SELECT unit_credits INTO v_libros_credits FROM listings WHERE id = v_listing_libros_id;
         
-        -- Debitar comprador (Carlos)
         SELECT balance INTO v_balance FROM wallets WHERE user_id = v_carlos_id FOR UPDATE;
         UPDATE wallets SET balance = balance - v_libros_credits WHERE user_id = v_carlos_id RETURNING balance INTO v_balance;
         INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
         VALUES (v_carlos_id, 'intercambio_debito', -v_libros_credits, v_balance, v_listing_libros_id);
         
-        -- Acreditar vendedor (Ana)
         SELECT balance INTO v_balance FROM wallets WHERE user_id = v_ana_id FOR UPDATE;
         UPDATE wallets SET balance = balance + v_libros_credits WHERE user_id = v_ana_id RETURNING balance INTO v_balance;
         INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
         VALUES (v_ana_id, 'intercambio_credito', v_libros_credits, v_balance, v_listing_libros_id);
         
-        -- Registrar intercambio con fecha retroactiva (50 días atrás)
         INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, exchange_date)
         VALUES (v_listing_libros_id, v_carlos_id, v_ana_id, 1, v_libros_credits, v_libros_credits, NOW() - INTERVAL '50 days');
         
-        -- Cerrar publicación
         UPDATE listings SET status = 'intercambiada' WHERE id = v_listing_libros_id;
     END IF;
     
     IF v_listing_monitor_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM exchanges WHERE listing_id = v_listing_monitor_id) THEN
-        -- Obtener el precio de la publicación
         SELECT unit_credits INTO v_monitor_credits FROM listings WHERE id = v_listing_monitor_id;
         
-        -- Debitar comprador (Roberto)
         SELECT balance INTO v_balance FROM wallets WHERE user_id = v_roberto_id FOR UPDATE;
         UPDATE wallets SET balance = balance - v_monitor_credits WHERE user_id = v_roberto_id RETURNING balance INTO v_balance;
         INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
         VALUES (v_roberto_id, 'intercambio_debito', -v_monitor_credits, v_balance, v_listing_monitor_id);
         
-        -- Acreditar vendedor (Lucia)
         SELECT balance INTO v_balance FROM wallets WHERE user_id = v_lucia_id FOR UPDATE;
         UPDATE wallets SET balance = balance + v_monitor_credits WHERE user_id = v_lucia_id RETURNING balance INTO v_balance;
         INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
         VALUES (v_lucia_id, 'intercambio_credito', v_monitor_credits, v_balance, v_listing_monitor_id);
         
-        -- Registrar intercambio con fecha retroactiva (18 días atrás)
         INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, exchange_date)
         VALUES (v_listing_monitor_id, v_roberto_id, v_lucia_id, 1, v_monitor_credits, v_monitor_credits, NOW() - INTERVAL '18 days');
         
-        -- Cerrar publicación
         UPDATE listings SET status = 'intercambiada' WHERE id = v_listing_monitor_id;
     END IF;
 END $$;
--- Balance esperado Roberto: 215 - 80 (monitor) = 135
 
--- 5. RECLAMOS (para datos de reportes)
+-- 6. RECLAMOS
 DO $$
 DECLARE
     v_exchange1_id INT := (SELECT id FROM exchanges WHERE listing_id = (SELECT id FROM listings WHERE title = 'Lote de 5 Novelas de Ficción'));

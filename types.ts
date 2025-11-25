@@ -25,6 +25,7 @@ export interface CreditMovement {
   balanceAfter: number;
 }
 
+
 export interface Category {
   id: number;
   name: string;
@@ -43,6 +44,7 @@ export interface Material {
 
 export interface ImpactMetricResult {
   code: string;
+  name: string;
   value: number;
   unit: string;
 }
@@ -84,6 +86,7 @@ export interface Listing {
   imageUrl: string;
   images?: ListingImage[];
   createdAt: string;
+  potentialImpact?: ImpactMetricResult[];
 }
 
 export interface Exchange {
@@ -97,7 +100,9 @@ export interface Exchange {
   quantity: number;
   totalCredits: number;
   date: string;
+  impacts?: ImpactMetricResult[]; // Impacto ambiental generado
 }
+
 
 export interface CreditPackage {
   id: number;
@@ -105,23 +110,18 @@ export interface CreditPackage {
   priceBs: number;
 }
 
-export interface ImpactMetrics {
-  reusedItems: number;
-  co2Saved: number;
-  co2Unit: string;
-  waterSaved: number;
-  waterUnit: string;
-  energySaved: number;
-  energyUnit: string;
-  wastePrevented: number;
-  wasteUnit: string;
-  serviceHours: number;
+export interface ImpactMetricDetail {
+  code: string;
+  name: string;
+  unit: string;
+  value: number;
 }
 
-export interface ImpactEquivalence {
-  metric: string;
-  equivalence: string;
-  value: number;
+export interface ImpactMetrics {
+  reusedItems: number;
+  serviceHours: number;
+  co2Saved: number;
+  detailedMetrics: ImpactMetricDetail[];
 }
 
 // New report interfaces

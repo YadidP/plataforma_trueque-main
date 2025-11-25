@@ -4,6 +4,7 @@ import { UpdateListingDto } from './dto/update-listing.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Listing, ListingImage } from 'src/entities';
 import { Repository } from 'typeorm';
+import { ImpactService } from '../impact/impact.service';
 
 @Injectable()
 export class ListingsService {
@@ -12,7 +13,8 @@ export class ListingsService {
     private listingsRepository: Repository<Listing>,
     @InjectRepository(ListingImage)
     private listingImagesRepository: Repository<ListingImage>,
-  ) {}
+    private impactService: ImpactService,
+  ) { }
 
   async create(createListingDto: CreateListingDto, authorId: number, imageUrls: string[]) {
     const listing = this.listingsRepository.create({
@@ -45,8 +47,8 @@ export class ListingsService {
     return savedListing;
   }
 
-  findAll() {
-    return this.listingsRepository.find({
+  async findAll() {
+    const listings = await this.listingsRepository.find({
       relations: ['author'],
       select: {
         author: {
@@ -57,29 +59,54 @@ export class ListingsService {
         createdAt: 'DESC'
       }
     });
+
+    return Promise.all(listings.map(async (listing) => {
+      let potentialImpact = [];
+      if (listing.materialId && listing.quantity && listing.unitLabel) {
+        potentialImpact = await this.impactService.calculateImpactPreview({
+          material_id: listing.materialId,
+          quantity: listing.quantity,
+          quantity_unit: listing.unitLabel
+        });
+      }
+      return {
+        ...listing,
+        potentialImpact
+      };
+    }));
   }
 
   async findOne(id: number) {
     const listing = await this.listingsRepository.findOne({
-        where: { id },
-        relations: ['author', 'category', 'images'],
-        select: {
-            author: { name: true, id: true },
-            category: { name: true },
-        },
-        order: {
-          images: {
-            displayOrder: 'ASC'
-          }
+      where: { id },
+      relations: ['author', 'category', 'images'],
+      select: {
+        author: { name: true, id: true },
+        category: { name: true },
+      },
+      order: {
+        images: {
+          displayOrder: 'ASC'
         }
+      }
     });
     if (!listing) {
-        throw new NotFoundException(`Publicación con ID ${id} no encontrada.`);
+      throw new NotFoundException(`Publicación con ID ${id} no encontrada.`);
     }
+    let potentialImpact = [];
+    if (listing.materialId && listing.quantity && listing.unitLabel) {
+      potentialImpact = await this.impactService.calculateImpactPreview({
+        material_id: listing.materialId,
+        quantity: listing.quantity,
+        quantity_unit: listing.unitLabel
+      });
+    }
+
     // Devolvemos un objeto plano que coincida con la interfaz del frontend
     return {
-        ...listing,
-        authorName: listing.author.name,
+      ...listing,
+      authorName: listing.author.name,
+      potentialImpact
     };
   }
 
@@ -88,9 +115,9 @@ export class ListingsService {
   }
 
   async update(id: number, updateListingDto: UpdateListingDto, userId: number, newImageUrls: string[]) {
-    const listing = await this.listingsRepository.findOne({ 
-      where: { id }, 
-      relations: ['images', 'author'] 
+    const listing = await this.listingsRepository.findOne({
+      where: { id },
+      relations: ['images', 'author']
     });
 
     if (!listing) throw new NotFoundException('Publicación no encontrada');
@@ -107,7 +134,7 @@ export class ListingsService {
     if (updateListingDto.unitLabel) listing.unitLabel = updateListingDto.unitLabel;
 
     // 2. Manejo de Imágenes
-    
+
     // A) Determinar qué imágenes antiguas se conservan
     // El frontend enviará 'keptImageUrls' como un string JSON (ej: "['/uploads/a.jpg', '/uploads/b.jpg']")
     let keptUrls: string[] = [];
@@ -126,7 +153,7 @@ export class ListingsService {
 
     // C) Guardar las nuevas imágenes
     if (newImageUrls.length > 0) {
-      const newImages = newImageUrls.map((url, index) => 
+      const newImages = newImageUrls.map((url, index) =>
         this.listingImagesRepository.create({
           listingId: listing.id,
           imageUrl: url,

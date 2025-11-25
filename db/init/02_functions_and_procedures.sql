@@ -66,6 +66,7 @@ $$;
 
 -- Registrar intercambio (3 parámetros): buyer, listing, quantity
 -- Deriva seller desde listings.author_id. Valida estado y auto-compra.
+-- AHORA TAMBIÉN REGISTRA EL IMPACTO AMBIENTAL
 CREATE OR REPLACE PROCEDURE sp_registrar_intercambio(
   IN p_buyer_id INT,
   IN p_listing_id INT,
@@ -79,13 +80,16 @@ DECLARE
   v_seller_id INT;
   v_status TEXT;
   v_balance NUMERIC;
+  v_exchange_id BIGINT;
+  v_material_id INT;
+  v_unit_label VARCHAR(50);
 BEGIN
   IF p_quantity <= 0 THEN
     RAISE EXCEPTION 'Cantidad inválida';
   END IF;
 
-  SELECT author_id, unit_credits, status
-    INTO v_seller_id, v_unit, v_status
+  SELECT author_id, unit_credits, status, material_id, unit_label
+    INTO v_seller_id, v_unit, v_status, v_material_id, v_unit_label
   FROM listings
   WHERE id = p_listing_id
   FOR UPDATE;
@@ -121,12 +125,29 @@ BEGIN
 
   -- Registrar intercambio
   INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total)
-  VALUES (p_listing_id, p_buyer_id, v_seller_id, p_quantity, v_unit, v_total);
+  VALUES (p_listing_id, p_buyer_id, v_seller_id, p_quantity, v_unit, v_total)
+  RETURNING id INTO v_exchange_id;
+
+  -- NUEVO: Registrar impacto ambiental del intercambio
+  IF v_material_id IS NOT NULL AND v_unit_label IS NOT NULL THEN
+    INSERT INTO exchange_impacts (exchange_id, metric_code, metric_name, metric_unit, impact_value)
+    SELECT 
+      v_exchange_id,
+      im.code,
+      im.name,
+      im.unit,
+      (p_quantity / ie.base_quantity) * ie.impact_value
+    FROM impact_equivalences ie
+    JOIN impact_metrics im ON ie.metric_id = im.id
+    WHERE ie.material_id = v_material_id 
+      AND ie.base_unit = v_unit_label;
+  END IF;
 
   -- Cerrar publicación
   UPDATE listings SET status = 'intercambiada' WHERE id = p_listing_id;
 END;
 $$;
+
 
 
 -- Función para el Reporte de Usuarios (parametrizada)

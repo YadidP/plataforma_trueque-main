@@ -30,43 +30,60 @@ const ImpactMetricsPanel: React.FC<ImpactMetricsPanelProps> = ({ metrics, loadin
     );
   }
 
+  const getMetric = (code: string) => metrics.detailedMetrics.find(m => m.code === code);
+
+  const co2 = getMetric('CO2');
+  const water = getMetric('WATER');
+  const energy = getMetric('ENERGY');
+  const waste = getMetric('WASTE');
+  const trees = getMetric('TREES');
+
   const impactCards = [
     {
       title: 'CO₂ Evitado',
-      value: (metrics.co2Saved || 0).toFixed(2), // Usamos '|| 0' como valor por defecto
-      unit: metrics.co2Unit || 'kg',
+      value: (co2?.value || 0).toFixed(2),
+      unit: co2?.unit || 'kg',
       icon: '🌍',
       color: 'blue',
       description: 'Emisiones reducidas',
-      equivalence: `Equivalente a una búsqueda en Google ~${Math.round((metrics.co2Saved || 0) / 0.02)}x`
+      equivalence: `Equivalente a una búsqueda en Google ~${Math.round((co2?.value || 0) / 0.02)}x`
     },
     {
       title: 'Agua Ahorrada',
-      value: (metrics.waterSaved || 0).toFixed(2), // Usamos '|| 0' como valor por defecto
-      unit: metrics.waterUnit || 'litros',
+      value: (water?.value || 0).toFixed(2),
+      unit: water?.unit || 'L',
       icon: '💧',
       color: 'cyan',
       description: 'Litros conservados',
-      equivalence: `Equivalente a ${Math.round((metrics.waterSaved || 0) / 100)} duchas`
+      equivalence: `Equivalente a ${Math.round((water?.value || 0) / 100)} duchas`
     },
     {
       title: 'Energía Ahorrada',
-      value: (metrics.energySaved || 0).toFixed(2), // Usamos '|| 0' como valor por defecto
-      unit: metrics.energyUnit || 'kWh',
+      value: (energy?.value || 0).toFixed(2),
+      unit: energy?.unit || 'kWh',
       icon: '⚡',
       color: 'yellow',
       description: 'Energía no consumida',
-      equivalence: `Equivalente a cargar ${Math.round((metrics.energySaved || 0) / 0.005)} móviles`
+      equivalence: `Equivalente a cargar ${Math.round((energy?.value || 0) / 0.005)} móviles`
     },
     {
       title: 'Residuos Evitados',
-      value: (metrics.wastePrevented || 0).toFixed(2), // Usamos '|| 0' como valor por defecto
-      unit: metrics.wasteUnit || 'kg',
+      value: (waste?.value || 0).toFixed(2),
+      unit: waste?.unit || 'kg',
       icon: '♻️',
       color: 'green',
       description: 'Basura no generada',
-      equivalence: `${Math.round((metrics.wastePrevented || 0) * 1000)} gramos de residuo`
+      equivalence: `${Math.round((waste?.value || 0) * 1000)} gramos de residuo`
     },
+    {
+      title: 'Árboles Equivalentes',
+      value: (trees?.value || 0).toFixed(2),
+      unit: trees?.unit || 'árboles',
+      icon: '🌳',
+      color: 'green',
+      description: 'Compensación forestal',
+      equivalence: `Bosque de ${Math.round(trees?.value || 0)} árboles`
+    }
   ];
 
   const colorClasses = {
@@ -98,7 +115,7 @@ const ImpactMetricsPanel: React.FC<ImpactMetricsPanelProps> = ({ metrics, loadin
           <div>
             <p className="text-sm text-gray-600 font-semibold">Métrica Principal</p>
             <h3 className="text-3xl font-bold text-blue-700 mt-1">
-              {metrics.co2Saved.toFixed(2)} {metrics.co2Unit || 'kg'}
+              {impactCards[0].value} {impactCards[0].unit}
             </h3>
             <p className="text-gray-600 mt-2">{impactCards[0].description}</p>
             <p className="text-sm text-blue-600 mt-2 italic">{impactCards[0].equivalence}</p>
@@ -108,8 +125,8 @@ const ImpactMetricsPanel: React.FC<ImpactMetricsPanelProps> = ({ metrics, loadin
       </div>
 
       {/* Grid de Métricas Secundarias */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {impactCards.slice(1).map((card, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {impactCards.slice(1).map((card) => (
           <div
             key={card.title}
             className={`border-2 p-4 rounded-lg ${colorClasses[card.color as keyof typeof colorClasses]}`}
@@ -135,22 +152,12 @@ const ImpactMetricsPanel: React.FC<ImpactMetricsPanelProps> = ({ metrics, loadin
       <div className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 p-6 rounded-lg">
         <h3 className="text-lg font-bold text-green-800 mb-3">🌿 Resumen de Tu Impacto</h3>
         <ul className="space-y-2 text-gray-700">
-          <li className="flex items-center">
-            <span className="text-green-600 mr-2">✓</span>
-            <span>Has evitado <strong>{(metrics.co2Saved || 0).toFixed(1)} kg</strong> de CO₂</span>
-          </li>
-          <li className="flex items-center">
-            <span className="text-green-600 mr-2">✓</span>
-            <span>Has ahorrado <strong>{(metrics.waterSaved || 0).toFixed(0)} litros</strong> de agua</span>
-          </li>
-          <li className="flex items-center">
-            <span className="text-green-600 mr-2">✓</span>
-            <span>Has evitado <strong>{(metrics.energySaved || 0).toFixed(2)} kWh</strong> de energía</span>
-          </li>
-          <li className="flex items-center">
-            <span className="text-green-600 mr-2">✓</span>
-            <span>Has prevenido <strong>{(metrics.wastePrevented || 0).toFixed(1)} kg</strong> de residuos</span>
-          </li>
+          {impactCards.map(card => (
+            <li key={card.title} className="flex items-center">
+              <span className="text-green-600 mr-2">✓</span>
+              <span>Has contribuido con <strong>{card.value} {card.unit}</strong> en {card.title}</span>
+            </li>
+          ))}
           <li className="flex items-center text-lg font-semibold mt-3 pt-3 border-t-2 border-green-300">
             <span className="text-green-600 mr-2">⏱️</span>
             <span>{(metrics.serviceHours || 0)} horas de servicio comunitario</span>

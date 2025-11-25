@@ -1,6 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
 import { Listing } from './listing.entity';
 import { User } from './user.entity';
+import { ExchangeImpact } from './exchange-impact.entity';
+
 
 @Entity('exchanges')
 export class Exchange {
@@ -42,4 +44,9 @@ export class Exchange {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'seller_id' })
   seller: User;
+
+  @OneToMany(() => ExchangeImpact, exchangeImpact => exchangeImpact.exchange)
+  impacts: ExchangeImpact[];
 }
+
+
