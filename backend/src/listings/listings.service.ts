@@ -72,23 +72,32 @@ export class ListingsService {
       SELECT
         l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
         l.unit_credits as "unitCredits", l.quantity, l.unit_label as "unitLabel",
+        l.material_id as "materialId",
         l.created_at as "createdAt",
         u.name as author_name, u.id as author_id
       FROM listings l
       JOIN users u ON l.author_id = u.id
+      WHERE l.status = 'activa'
       ORDER BY l.created_at DESC;
     `;
     const result = await this.pgService.query(query);
 
     return Promise.all(result.rows.map(async (listing) => {
       let potentialImpact = [];
-      if (listing.material_id && listing.quantity && listing.unitLabel) {
-        potentialImpact = await this.impactService.calculateImpactPreview({
-          material_id: listing.material_id,
-          quantity: listing.quantity,
-          quantity_unit: listing.unitLabel
-        });
+      
+      // Solo calculamos si tiene material, cantidad y unidad
+      if (listing.materialId && listing.quantity && listing.unitLabel) {
+        try {
+          potentialImpact = await this.impactService.calculateImpactPreview({
+            material_id: listing.materialId,
+            quantity: Number(listing.quantity),
+            quantity_unit: listing.unitLabel
+          });
+        } catch (e) {
+          console.error(`Error calculando impacto para listing ${listing.id}`, e);
+        }
       }
+      
       return {
         ...listing,
         author: { name: listing.author_name, id: listing.author_id },
@@ -146,13 +155,34 @@ export class ListingsService {
       SELECT
         id, title, description, image_url as "imageUrl", status,
         unit_credits as "unitCredits", quantity, unit_label as "unitLabel",
+        material_id as "materialId",
         created_at as "createdAt"
       FROM listings
       WHERE author_id = $1
       ORDER BY created_at DESC;
     `;
     const result = await this.pgService.query(query, [authorId]);
-    return result.rows;
+    
+    return Promise.all(result.rows.map(async (listing) => {
+      let potentialImpact = [];
+      
+      if (listing.materialId && listing.quantity && listing.unitLabel) {
+        try {
+          potentialImpact = await this.impactService.calculateImpactPreview({
+            material_id: listing.materialId,
+            quantity: Number(listing.quantity),
+            quantity_unit: listing.unitLabel
+          });
+        } catch (e) {
+          console.error(`Error calculando impacto para listing ${listing.id}`, e);
+        }
+      }
+      
+      return {
+        ...listing,
+        potentialImpact
+      };
+    }));
   }
 
   async update(id: number, updateListingDto: UpdateListingDto, userId: number, newImageUrls: string[]) {

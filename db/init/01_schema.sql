@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS impact_equivalences (
  base_unit VARCHAR(50),
  impact_value NUMERIC NOT NULL,
  source_reference TEXT,
- UNIQUE(material_id, metric_id, base_unit)
+ UNIQUE(material_id, metric_id, base_quantity, base_unit)
 );
 
 CREATE TABLE IF NOT EXISTS listings (

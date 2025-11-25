@@ -8,52 +8,53 @@ export class ReportsService {
     constructor(private pgService: PgService) { } // Inject PgService
 
     // Lógica para el Dashboard del Usuario
-    async getUserImpactMetrics(userId: number): Promise<any> {
-        // 1. Obtener métricas básicas (reusedItems, serviceHours)
-        const basicStatsResult = await this.pgService.query(`
-            SELECT 
-                COUNT(e.id) as reused_items,
-                COALESCE(SUM(CASE WHEN c.name = 'Servicios' THEN l.quantity * e.quantity ELSE 0 END), 0) as service_hours
-            FROM exchanges e
-            JOIN listings l ON e.listing_id = l.id
-            JOIN categories c ON l.category_id = c.id
-            WHERE e.buyer_id =  OR e.seller_id = 
-        `, [userId]);
-
-        // 2. Calcular impacto detallado usando equivalencias
-        const detailedImpactResult = await this.pgService.query(`
-            SELECT
-                im.code,
-                im.name,
-                im.unit,
-                SUM(
-                    (e.quantity * l.quantity) / ie.base_quantity * ie.impact_value
-                ) as value
-            FROM exchanges e
-            JOIN listings l ON e.listing_id = l.id
-            JOIN impact_equivalences ie ON l.material_id = ie.material_id
-            JOIN impact_metrics im ON ie.metric_id = im.id
-            WHERE e.buyer_id =  OR e.seller_id = 
-            GROUP BY im.code, im.name, im.unit
-        `, [userId]);
-
-        const stats = basicStatsResult.rows[0];
-        const detailedImpact = detailedImpactResult.rows;
-        const co2Metric = detailedImpact.find((m: any) => m.code === 'CO2');
-
-        return {
-            reusedItems: parseInt(stats.reused_items, 10) || 0,
-            serviceHours: parseFloat(stats.service_hours) || 0,
-            co2Saved: co2Metric ? parseFloat(co2Metric.value) : 0,
-            detailedMetrics: detailedImpact.map((m: any) => ({
-                code: m.code,
-                name: m.name,
-                unit: m.unit,
-                value: parseFloat(m.value)
-            }))
-        };
-    }
-
+        async getUserImpactMetrics(userId: number): Promise<any> {
+            // 1. Métricas básicas de actividad (Items reutilizados y horas de servicio)
+            const basicStatsResult = await this.pgService.query(`
+                SELECT
+                    COUNT(e.id) as reused_items,
+                    COALESCE(SUM(CASE WHEN c.name = 'Servicios' THEN l.quantity * e.quantity ELSE 0 END), 0) as service_hours
+                FROM exchanges e
+                JOIN listings l ON e.listing_id = l.id
+                JOIN categories c ON l.category_id = c.id
+                WHERE e.buyer_id = $1 OR e.seller_id = $1
+            `, [userId]);
+    
+            // 2. Impacto Ambiental Real (Sumando desde el historial guardado en exchange_impacts)
+            // Esto suma el impacto tanto si compraste como si vendiste (ambos contribuyen a la economía circular)
+            const impactResult = await this.pgService.query(`
+                SELECT
+                    ei.metric_code as code,
+                    ei.metric_name as name,
+                    ei.metric_unit as unit,
+                    COALESCE(SUM(ei.impact_value), 0) as total_value
+                FROM exchange_impacts ei
+                JOIN exchanges e ON ei.exchange_id = e.id
+                WHERE e.buyer_id = $1 OR e.seller_id = $1
+                GROUP BY ei.metric_code, ei.metric_name, ei.metric_unit
+            `, [userId]);
+    
+            const stats = basicStatsResult.rows[0];
+            const impacts = impactResult.rows;
+    
+            // Función auxiliar para obtener valor o 0 si no existe
+            const getMetricVal = (code: string) => {
+                const m = impacts.find((i: any) => i.code === code);
+                return m ? parseFloat(m.total_value) : 0;
+            };
+    
+            return {
+                reusedItems: parseInt(stats.reused_items, 10) || 0,
+                serviceHours: parseFloat(stats.service_hours) || 0,
+                co2Saved: getMetricVal('CO2'),
+                detailedMetrics: impacts.map((m: any) => ({
+                    code: m.code,
+                    name: m.name,
+                    unit: m.unit,
+                    value: parseFloat(m.total_value)
+                }))
+            };
+        }
     // --- Lógica para el Panel de Administración ---
 
     async getUsersReport(dateRange: DateRangeDto): Promise<UserReportDto> {

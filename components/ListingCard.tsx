@@ -62,18 +62,23 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
           <h3 className="text-lg font-bold text-gray-800 truncate">{listing.title}</h3>
           <p className="text-sm text-gray-600 mt-1">por {listing.authorName}</p>
 
-          {listing.potentialImpact && listing.potentialImpact.length > 0 && (
-            <div className="mt-2 text-xs">
-              <p className="font-semibold text-green-700 mb-1">Impacto estimado:</p>
+          {listing.potentialImpact && listing.potentialImpact.length > 0 ? (
+            <div className="mt-3">
+              <p className="text-xs font-semibold text-green-700 mb-1">Impacto estimado al adquirir:</p>
               <div className="flex flex-wrap gap-1">
                 {listing.potentialImpact.slice(0, 2).map((m) => (
-                  <span key={m.code} className="bg-green-50 text-green-800 px-1.5 py-0.5 rounded border border-green-100 flex items-center">
+                  <span key={m.code} className="bg-green-50 text-green-800 text-[10px] px-2 py-1 rounded-full border border-green-100 flex items-center">
                     <span className="font-bold mr-1">{m.value}</span> {m.unit} {m.name}
                   </span>
                 ))}
-                {listing.potentialImpact.length > 2 && <span className="text-gray-400">+{listing.potentialImpact.length - 2}</span>}
+                {listing.potentialImpact.length > 2 && (
+                   <span className="text-xs text-gray-400 ml-1">+{listing.potentialImpact.length - 2} más</span>
+                )}
               </div>
             </div>
+          ) : (
+             // Opcional: Mostrar placeholder si no hay impacto calculado
+             <div className="mt-3 h-6"></div> 
           )}
 
           <div className="mt-4 flex justify-between items-center">

@@ -7,173 +7,96 @@ interface ImpactMetricsPanelProps {
 }
 
 const ImpactMetricsPanel: React.FC<ImpactMetricsPanelProps> = ({ metrics, loading = false }) => {
+  // Estado de carga (Skeleton)
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-20 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+      <div className="bg-white p-6 rounded-xl shadow border border-gray-100 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="h-32 bg-gray-200 rounded-xl"></div>
+          <div className="h-32 bg-gray-200 rounded-xl"></div>
+          <div className="h-32 bg-gray-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
-  if (!metrics) {
+  // Estado vacío (Usuario sin actividad)
+  if (!metrics || metrics.reusedItems === 0) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow-md text-center">
-        <p className="text-gray-500">No hay datos de impacto disponibles</p>
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-8 rounded-xl border border-green-100 text-center shadow-sm">
+        <div className="text-5xl mb-3">🌱</div>
+        <h2 className="text-xl font-bold text-green-800 mb-2">Comienza tu impacto positivo</h2>
+        <p className="text-gray-600 max-w-md mx-auto">
+          Aún no tienes métricas registradas. Al completar tu primer intercambio (compra o venta), aquí verás cuánto CO₂ y recursos has ahorrado al planeta.
+        </p>
       </div>
     );
   }
 
-  const getMetric = (code: string) => metrics.detailedMetrics.find(m => m.code === code);
-
-  const co2 = getMetric('CO2');
-  const water = getMetric('WATER');
-  const energy = getMetric('ENERGY');
-  const waste = getMetric('WASTE');
-  const trees = getMetric('TREES');
-
-  const impactCards = [
-    {
-      title: 'CO₂ Evitado',
-      value: (co2?.value || 0).toFixed(2),
-      unit: co2?.unit || 'kg',
-      icon: '🌍',
-      color: 'blue',
-      description: 'Emisiones reducidas',
-      equivalence: `Equivalente a una búsqueda en Google ~${Math.round((co2?.value || 0) / 0.02)}x`
-    },
-    {
-      title: 'Agua Ahorrada',
-      value: (water?.value || 0).toFixed(2),
-      unit: water?.unit || 'L',
-      icon: '💧',
-      color: 'cyan',
-      description: 'Litros conservados',
-      equivalence: `Equivalente a ${Math.round((water?.value || 0) / 100)} duchas`
-    },
-    {
-      title: 'Energía Ahorrada',
-      value: (energy?.value || 0).toFixed(2),
-      unit: energy?.unit || 'kWh',
-      icon: '⚡',
-      color: 'yellow',
-      description: 'Energía no consumida',
-      equivalence: `Equivalente a cargar ${Math.round((energy?.value || 0) / 0.005)} móviles`
-    },
-    {
-      title: 'Residuos Evitados',
-      value: (waste?.value || 0).toFixed(2),
-      unit: waste?.unit || 'kg',
-      icon: '♻️',
-      color: 'green',
-      description: 'Basura no generada',
-      equivalence: `${Math.round((waste?.value || 0) * 1000)} gramos de residuo`
-    },
-    {
-      title: 'Árboles Equivalentes',
-      value: (trees?.value || 0).toFixed(2),
-      unit: trees?.unit || 'árboles',
-      icon: '🌳',
-      color: 'green',
-      description: 'Compensación forestal',
-      equivalence: `Bosque de ${Math.round(trees?.value || 0)} árboles`
-    }
-  ];
-
-  const colorClasses = {
-    blue: 'bg-blue-50 border-blue-200',
-    cyan: 'bg-cyan-50 border-cyan-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    green: 'bg-green-50 border-green-200',
+  // Helpers para obtener valores seguros
+  const getVal = (code: string) => {
+    const m = metrics.detailedMetrics.find(x => x.code === code);
+    return m ? m.value : 0;
   };
 
-  const iconColorClasses = {
-    blue: 'text-blue-600',
-    cyan: 'text-cyan-600',
-    yellow: 'text-yellow-600',
-    green: 'text-green-600',
-  };
+  const co2 = getVal('CO2');
+  const water = getVal('WATER');
+  const energy = getVal('ENERGY');
+  const waste = getVal('WASTE');
+  const trees = getVal('TREES');
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">📊 Impacto Ambiental Total</h2>
-        <p className="text-gray-600 mb-6">
-          Has realizado {metrics.reusedItems} intercambios y contribuido significativamente al medio ambiente.
-        </p>
+      <div className="flex flex-col md:flex-row justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            📊 Tu Impacto Ambiental
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">Acumulado en tus {metrics.reusedItems} intercambios.</p>
+        </div>
       </div>
 
-      {/* Métrica Principal - CO2 */}
-      <div className={`border-2 p-6 rounded-lg ${colorClasses.blue}`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-600 font-semibold">Métrica Principal</p>
-            <h3 className="text-3xl font-bold text-blue-700 mt-1">
-              {impactCards[0].value} {impactCards[0].unit}
-            </h3>
-            <p className="text-gray-600 mt-2">{impactCards[0].description}</p>
-            <p className="text-sm text-blue-600 mt-2 italic">{impactCards[0].equivalence}</p>
+      {/* Tarjeta Principal: CO2 */}
+      <div className="bg-green-primary rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="text-green-100 font-medium mb-1 text-sm uppercase tracking-wide">Huella de Carbono Evitada</div>
+          <div className="text-5xl font-bold mb-2">
+            {co2.toFixed(1)} <span className="text-2xl font-normal">kg</span>
           </div>
-          <span className="text-6xl">{impactCards[0].icon}</span>
+          <div className="inline-block bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1 text-xs">
+             ☁️ Equivalente a cargar {Math.round(co2 / 0.007)} celulares
+          </div>
+        </div>
+        {/* Decoración de fondo */}
+        <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
+           <span className="text-9xl">🌍</span>
         </div>
       </div>
 
       {/* Grid de Métricas Secundarias */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {impactCards.slice(1).map((card) => (
-          <div
-            key={card.title}
-            className={`border-2 p-4 rounded-lg ${colorClasses[card.color as keyof typeof colorClasses]}`}
-          >
-            <div className="flex justify-between items-start mb-3">
-              <span className={`text-4xl ${iconColorClasses[card.color as keyof typeof iconColorClasses]}`}>
-                {card.icon}
-              </span>
-              <h3 className="text-sm font-semibold text-gray-700 text-right flex-1 ml-2">{card.title}</h3>
-            </div>
-            <p className="text-2xl font-bold text-gray-800 mb-1">
-              {card.value} <span className="text-sm">{card.unit}</span>
-            </p>
-            <p className="text-xs text-gray-600 mb-2">{card.description}</p>
-            <div className="bg-white/50 rounded p-2 mt-2">
-              <p className="text-xs text-gray-700 italic">{card.equivalence}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Resumen de Impacto */}
-      <div className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 p-6 rounded-lg">
-        <h3 className="text-lg font-bold text-green-800 mb-3">🌿 Resumen de Tu Impacto</h3>
-        <ul className="space-y-2 text-gray-700">
-          {impactCards.map(card => (
-            <li key={card.title} className="flex items-center">
-              <span className="text-green-600 mr-2">✓</span>
-              <span>Has contribuido con <strong>{card.value} {card.unit}</strong> en {card.title}</span>
-            </li>
-          ))}
-          <li className="flex items-center text-lg font-semibold mt-3 pt-3 border-t-2 border-green-300">
-            <span className="text-green-600 mr-2">⏱️</span>
-            <span>{(metrics.serviceHours || 0)} horas de servicio comunitario</span>
-          </li>
-        </ul>
-      </div>
-
-      {/* Consejos de Sostenibilidad */}
-      <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
-        <p className="text-sm text-blue-800">
-          <strong>💡 Consejo:</strong> Continúa intercambiando artículos para aumentar tu impacto ambiental.
-          ¡Cada intercambio cuenta!
-        </p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard icon="💧" value={water} unit="L" label="Agua Ahorrada" color="text-blue-600 bg-blue-50 border-blue-100" />
+        <MetricCard icon="⚡" value={energy} unit="kWh" label="Energía" color="text-yellow-600 bg-yellow-50 border-yellow-100" />
+        <MetricCard icon="♻️" value={waste} unit="kg" label="Residuos Evitados" color="text-purple-600 bg-purple-50 border-purple-100" />
+        <MetricCard icon="🌳" value={trees} unit="" label="Árboles Eq." color="text-emerald-600 bg-emerald-50 border-emerald-100" />
       </div>
     </div>
   );
 };
+
+// Subcomponente simple para las tarjetas pequeñas
+const MetricCard = ({ icon, value, unit, label, color }: any) => (
+  <div className={`p-4 rounded-xl border ${color} flex flex-col justify-between`}>
+    <span className="text-2xl mb-2">{icon}</span>
+    <div>
+      <div className="text-xl font-bold">
+        {value >= 1000 ? (value/1000).toFixed(1) + 'k' : value.toFixed(1)}
+        <span className="text-sm font-normal ml-1">{unit}</span>
+      </div>
+      <div className="text-xs font-semibold uppercase opacity-70">{label}</div>
+    </div>
+  </div>
+);
 
 export default ImpactMetricsPanel;

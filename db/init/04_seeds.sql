@@ -1,206 +1,204 @@
--- db/init/04_seeds.sql
--- Datos iniciales para la plataforma de trueque
+-- LIMPIEZA INICIAL (Para evitar duplicados o errores al reiniciar)
+TRUNCATE TABLE exchange_impacts CASCADE;
+TRUNCATE TABLE exchanges CASCADE;
+TRUNCATE TABLE listings CASCADE;
+TRUNCATE TABLE impact_equivalences CASCADE;
+TRUNCATE TABLE impact_metrics CASCADE;
+TRUNCATE TABLE materials CASCADE;
+TRUNCATE TABLE subcategories CASCADE;
+TRUNCATE TABLE categories CASCADE;
+TRUNCATE TABLE users CASCADE;
 
--- 1. CATEGORÍAS Y SUBCATEGORÍAS
-INSERT INTO categories (name) VALUES
-('Electrónica'), ('Ropa y Accesorios'), ('Libros y Papelería'), ('Hogar y Decoración'),
-('Deportes y Ocio'), ('Juguetes y Niños'), ('Herramientas y Bricolaje'),
-('Salud y Belleza'), ('Alimentos y Bebidas'), ('Servicios')
-ON CONFLICT (name) DO NOTHING;
+-- 1. MATERIALES
+INSERT INTO materials (name) VALUES 
+('Madera'), ('Algodón'), ('Plástico'), ('Papel'), ('Metal'), ('Vidrio'), ('Electrónicos'), ('Textil Sintético');
 
+-- 2. MÉTRICAS
+INSERT INTO impact_metrics (code, name, unit) VALUES
+('CO2', 'Huella de Carbono', 'kg'),
+('WATER', 'Agua Ahorrada', 'litros'),
+('ENERGY', 'Energía Ahorrada', 'kWh'),
+('WASTE', 'Residuos Evitados', 'kg'),
+('TREES', 'Árboles Equivalentes', 'árboles'),
+('RECYCLED', 'Material Reciclado', 'kg');
+
+-- 3. EQUIVALENCIAS (Crucial: base_unit debe coincidir con unit_label de las publicaciones)
+
+-- Madera (base: kg)
+INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
+((SELECT id FROM materials WHERE name='Madera'), (SELECT id FROM impact_metrics WHERE code='CO2'), 1, 'kg', 1.5),
+((SELECT id FROM materials WHERE name='Madera'), (SELECT id FROM impact_metrics WHERE code='TREES'), 100, 'kg', 1),
+((SELECT id FROM materials WHERE name='Madera'), (SELECT id FROM impact_metrics WHERE code='ENERGY'), 1, 'kg', 5);
+
+-- Algodón (base: unidades - ej: 1 camiseta)
+INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
+((SELECT id FROM materials WHERE name='Algodón'), (SELECT id FROM impact_metrics WHERE code='CO2'), 1, 'unidades', 5.5),
+((SELECT id FROM materials WHERE name='Algodón'), (SELECT id FROM impact_metrics WHERE code='WATER'), 1, 'unidades', 2700),
+((SELECT id FROM materials WHERE name='Algodón'), (SELECT id FROM impact_metrics WHERE code='ENERGY'), 1, 'unidades', 10),
+((SELECT id FROM materials WHERE name='Algodón'), (SELECT id FROM impact_metrics WHERE code='WASTE'), 1, 'unidades', 0.2);
+
+-- Plástico (base: kg)
+INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
+((SELECT id FROM materials WHERE name='Plástico'), (SELECT id FROM impact_metrics WHERE code='CO2'), 1, 'kg', 2.0),
+((SELECT id FROM materials WHERE name='Plástico'), (SELECT id FROM impact_metrics WHERE code='ENERGY'), 1, 'kg', 15),
+((SELECT id FROM materials WHERE name='Plástico'), (SELECT id FROM impact_metrics WHERE code='RECYCLED'), 1, 'kg', 1);
+
+-- Papel (base: unidades - ej: 1 libro, 100g)
+INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
+((SELECT id FROM materials WHERE name='Papel'), (SELECT id FROM impact_metrics WHERE code='CO2'), 1, 'unidades', 1.2), -- CO2 por libro
+((SELECT id FROM materials WHERE name='Papel'), (SELECT id FROM impact_metrics WHERE code='WATER'), 1, 'unidades', 30), -- Agua por libro
+((SELECT id FROM materials WHERE name='Papel'), (SELECT id FROM impact_metrics WHERE code='TREES'), 50, 'unidades', 1); -- 1 árbol por 50 libros
+
+-- Metal (base: kg)
+INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
+((SELECT id FROM materials WHERE name='Metal'), (SELECT id FROM impact_metrics WHERE code='CO2'), 1, 'kg', 3.0),
+((SELECT id FROM materials WHERE name='Metal'), (SELECT id FROM impact_metrics WHERE code='ENERGY'), 1, 'kg', 20),
+((SELECT id FROM materials WHERE name='Metal'), (SELECT id FROM impact_metrics WHERE code='RECYCLED'), 1, 'kg', 1);
+
+-- Vidrio (base: unidades - ej: 1 botella)
+INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
+((SELECT id FROM materials WHERE name='Vidrio'), (SELECT id FROM impact_metrics WHERE code='CO2'), 1, 'unidades', 0.8),
+((SELECT id FROM materials WHERE name='Vidrio'), (SELECT id FROM impact_metrics WHERE code='ENERGY'), 1, 'unidades', 3);
+
+-- Electrónicos (base: unidades - ej: 1 smartphone)
+INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
+((SELECT id FROM materials WHERE name='Electrónicos'), (SELECT id FROM impact_metrics WHERE code='CO2'), 1, 'unidades', 15.0),
+((SELECT id FROM materials WHERE name='Electrónicos'), (SELECT id FROM impact_metrics WHERE code='WASTE'), 1, 'unidades', 0.5),
+((SELECT id FROM materials WHERE name='Electrónicos'), (SELECT id FROM impact_metrics WHERE code='ENERGY'), 1, 'unidades', 50);
+
+-- Textil Sintético (base: unidades - ej: 1 prenda)
+INSERT INTO impact_equivalences (material_id, metric_id, base_quantity, base_unit, impact_value) VALUES
+((SELECT id FROM materials WHERE name='Textil Sintético'), (SELECT id FROM impact_metrics WHERE code='CO2'), 1, 'unidades', 7.0),
+((SELECT id FROM materials WHERE name='Textil Sintético'), (SELECT id FROM impact_metrics WHERE code='WATER'), 1, 'unidades', 1500),
+((SELECT id FROM materials WHERE name='Textil Sintético'), (SELECT id FROM impact_metrics WHERE code='WASTE'), 1, 'unidades', 0.3);
+
+
+-- 4. CATEGORÍAS Y SUBCATEGORÍAS
+INSERT INTO categories (name) VALUES 
+('Ropa'), 
+('Hogar'), 
+('Libros'),
+('Electrónica'),
+('Servicios');
+
+-- Ropa
 INSERT INTO subcategories (category_id, name) VALUES
+((SELECT id FROM categories WHERE name='Ropa'), 'Camisetas'),
+((SELECT id FROM categories WHERE name='Ropa'), 'Pantalones'),
+((SELECT id FROM categories WHERE name='Ropa'), 'Abrigos'),
+((SELECT id FROM categories WHERE name='Ropa'), 'Zapatos');
+
+-- Hogar
+INSERT INTO subcategories (category_id, name) VALUES
+((SELECT id FROM categories WHERE name='Hogar'), 'Muebles'),
+((SELECT id FROM categories WHERE name='Hogar'), 'Decoración'),
+((SELECT id FROM categories WHERE name='Hogar'), 'Electrodomésticos'),
+((SELECT id FROM categories WHERE name='Hogar'), 'Utensilios de Cocina');
+
+-- Libros
+INSERT INTO subcategories (category_id, name) VALUES
+((SELECT id FROM categories WHERE name='Libros'), 'Novelas'),
+((SELECT id FROM categories WHERE name='Libros'), 'Libros de Texto'),
+((SELECT id FROM categories WHERE name='Libros'), 'Revistas');
+
 -- Electrónica
-((SELECT id FROM categories WHERE name = 'Electrónica'), 'Smartphones'),
-((SELECT id FROM categories WHERE name = 'Electrónica'), 'Laptops'),
-((SELECT id FROM categories WHERE name = 'Electrónica'), 'Audio y Video'),
-((SELECT id FROM categories WHERE name = 'Electrónica'), 'Accesorios'),
--- Ropa y Accesorios
-((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Camisetas'),
-((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Pantalones'),
-((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Calzado'),
-((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Bolsos y Carteras'),
-((SELECT id FROM categories WHERE name = 'Ropa y Accesorios'), 'Joyas'),
--- Libros y Papelería
-((SELECT id FROM categories WHERE name = 'Libros y Papelería'), 'Novelas'),
-((SELECT id FROM categories WHERE name = 'Libros y Papelería'), 'Texto'),
-((SELECT id FROM categories WHERE name = 'Libros y Papelería'), 'Material Escolar'),
-((SELECT id FROM categories WHERE name = 'Libros y Papelería'), 'Arte y Manualidades'),
--- Hogar y Decoración
-((SELECT id FROM categories WHERE name = 'Hogar y Decoración'), 'Muebles'),
-((SELECT id FROM categories WHERE name = 'Hogar y Decoración'), 'Decoración'),
-((SELECT id FROM categories WHERE name = 'Hogar y Decoración'), 'Cocina y Comedor'),
-((SELECT id FROM categories WHERE name = 'Hogar y Decoración'), 'Jardinería'),
--- Deportes y Ocio
-((SELECT id FROM categories WHERE name = 'Deportes y Ocio'), 'Bicicletas'),
-((SELECT id FROM categories WHERE name = 'Deportes y Ocio'), 'Equipo de Camping'),
-((SELECT id FROM categories WHERE name = 'Deportes y Ocio'), 'Balones y Pelotas'),
-((SELECT id FROM categories WHERE name = 'Deportes y Ocio'), 'Juegos de Mesa'),
--- Juguetes y Niños
-((SELECT id FROM categories WHERE name = 'Juguetes y Niños'), 'Figuras de Acción'),
-((SELECT id FROM categories WHERE name = 'Juguetes y Niños'), 'Muñecas y Accesorios'),
-((SELECT id FROM categories WHERE name = 'Juguetes y Niños'), 'Juguetes Educativos'),
-((SELECT id FROM categories WHERE name = 'Juguetes y Niños'), 'Ropa Infantil'),
--- Herramientas y Bricolaje
-((SELECT id FROM categories WHERE name = 'Herramientas y Bricolaje'), 'Herramientas Manuales'),
-((SELECT id FROM categories WHERE name = 'Herramientas y Bricolaje'), 'Herramientas Eléctricas'),
-((SELECT id FROM categories WHERE name = 'Herramientas y Bricolaje'), 'Materiales de Construcción'),
--- Salud y Belleza
-((SELECT id FROM categories WHERE name = 'Salud y Belleza'), 'Maquillaje'),
-((SELECT id FROM categories WHERE name = 'Salud y Belleza'), 'Cuidado de la Piel'),
-((SELECT id FROM categories WHERE name = 'Salud y Belleza'), 'Perfumes'),
-((SELECT id FROM categories WHERE name = 'Salud y Belleza'), 'Cuidado del Cabello'),
--- Alimentos y Bebidas
-((SELECT id FROM categories WHERE name = 'Alimentos y Bebidas'), 'Productos No Perecederos'),
-((SELECT id FROM categories WHERE name = 'Alimentos y Bebidas'), 'Bebidas Artesanales'),
--- Servicios
-((SELECT id FROM categories WHERE name = 'Servicios'), 'Clases Particulares'),
-((SELECT id FROM categories WHERE name = 'Servicios'), 'Reparaciones'),
-((SELECT id FROM categories WHERE name = 'Servicios'), 'Asesorías');
+INSERT INTO subcategories (category_id, name) VALUES
+((SELECT id FROM categories WHERE name='Electrónica'), 'Smartphones'),
+((SELECT id FROM categories WHERE name='Electrónica'), 'Laptops'),
+((SELECT id FROM categories WHERE name='Electrónica'), 'Tablets'),
+((SELECT id FROM categories WHERE name='Electrónica'), 'Componentes PC');
 
--- 2. USUARIOS (password: 123456 para todos)
-INSERT INTO users (name, email, password_hash, role, created_at) VALUES
-    ('Admin User', 'admin@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'admin', NOW() - INTERVAL '6 months'),
-    ('Emprendedor Eco', 'emprendedor@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'emprendedor', NOW() - INTERVAL '5 months'),
-    ('Ana Lopez', 'ana@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'emprendedor', NOW() - INTERVAL '4 months'),
-    ('Carlos Perez', 'carlos@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '3 months'),
-    ('Lucia Mendez', 'lucia@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '2 months'),
-    ('Roberto Gomez', 'roberto@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '1 month'),
-    ('Maria Rodriguez', 'maria@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '20 days'),
-    ('Tienda Eco', 'tienda@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'emprendedor', NOW() - INTERVAL '10 days'),
-    ('Nuevo Usuario', 'nuevo@eco.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario', NOW() - INTERVAL '2 days');
+-- Servicios (no tienen material_id directo para impacto ambiental en este contexto)
+INSERT INTO subcategories (category_id, name) VALUES
+((SELECT id FROM categories WHERE name='Servicios'), 'Clases Particulares'),
+((SELECT id FROM categories WHERE name='Servicios'), 'Reparaciones');
 
--- 3. PUBLICACIONES
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Sillas de Madera Restauradas') THEN
-        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='emprendedor@eco.com'), 'Sillas de Madera Restauradas', 'Set de 4 sillas de comedor, restauradas y barnizadas.', (SELECT id FROM categories WHERE name='Hogar y Decoración'), (SELECT id FROM subcategories WHERE name='Muebles'), 50, '/uploads/sillas.jpg', NOW() - INTERVAL '60 days', 'activa');
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Bicicleta de Montaña R26') THEN
-        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='carlos@eco.com'), 'Bicicleta de Montaña R26', 'Marca "Vento", 18 velocidades. Le falta un pedal.', (SELECT id FROM categories WHERE name='Deportes y Ocio'), (SELECT id FROM subcategories WHERE name='Bicicletas'), 120, '/uploads/bici.jpg', NOW() - INTERVAL '25 days', 'activa');
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Clases de Matemáticas Online') THEN
-        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='roberto@eco.com'), 'Clases de Matemáticas Online', 'Nivel secundaria y preparatoria. 1 hora por Zoom.', (SELECT id FROM categories WHERE name='Servicios'), (SELECT id FROM subcategories WHERE name='Clases Particulares'), 20, '/uploads/clases.jpg', NOW() - INTERVAL '5 days', 'activa');
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Jabones Artesanales Ecológicos') THEN
-        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='tienda@eco.com'), 'Jabones Artesanales Ecológicos', 'Pack de 3 jabones. Lavanda, avena y romero.', (SELECT id FROM categories WHERE name='Salud y Belleza'), (SELECT id FROM subcategories WHERE name='Cuidado de la Piel'), 10, '/uploads/jabones.jpg', NOW() - INTERVAL '3 days', 'activa');
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Mesa de Centro de Roble') THEN
-        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='emprendedor@eco.com'), 'Mesa de Centro de Roble', 'Madera maciza de roble reciclada. Estilo rústico.', (SELECT id FROM categories WHERE name='Hogar y Decoración'), (SELECT id FROM subcategories WHERE name='Muebles'), 45, '/uploads/mesa.jpg', NOW() - INTERVAL '2 days', 'activa');
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Lote Ropa de Bebé (0-6 meses)') THEN
-        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote Ropa de Bebé (0-6 meses)', 'Ropa en excelente estado, casi nueva.', (SELECT id FROM categories WHERE name='Ropa y Accesorios'), (SELECT id FROM subcategories WHERE name='Camisetas'), 25, '/uploads/ropa.jpg', NOW() - INTERVAL '1 day', 'activa');
-    END IF;
+-- 5. USUARIOS
+INSERT INTO users (name, email, password_hash, role) VALUES
+('Admin', 'admin@ecotrade.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'admin'),
+('Ana', 'ana@email.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario'),
+('Carlos', 'carlos@email.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario'),
+('Maria', 'maria@email.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'usuario');
 
-    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Lote de 5 Novelas de Ficción') THEN
-        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='ana@eco.com'), 'Lote de 5 Novelas de Ficción', 'Colección de bolsillo. Autores varios.', (SELECT id FROM categories WHERE name='Libros y Papelería'), (SELECT id FROM subcategories WHERE name='Novelas'), 15, '/uploads/libros.jpg', NOW() - INTERVAL '55 days', 'activa');
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM listings WHERE title = 'Monitor Gamer 24" Full HD') THEN
-        INSERT INTO listings (author_id, title, description, category_id, subcategory_id, unit_credits, image_url, created_at, status) VALUES
-        ((SELECT id FROM users WHERE email='lucia@eco.com'), 'Monitor Gamer 24" Full HD', '144Hz, 1ms de respuesta. Funciona perfectamente.', (SELECT id FROM categories WHERE name='Electrónica'), (SELECT id FROM subcategories WHERE name='Laptops'), 80, '/uploads/monitor.jpg', NOW() - INTERVAL '20 days', 'activa');
-    END IF;
-END $$;
 
--- 4. COMPRA DE CRÉDITOS
-DO $$
-DECLARE
-    v_carlos_id INT := (SELECT id FROM users WHERE email = 'carlos@eco.com');
-    v_lucia_id INT := (SELECT id FROM users WHERE email = 'lucia@eco.com');
-    v_roberto_id INT := (SELECT id FROM users WHERE email = 'roberto@eco.com');
-    v_nuevo_id INT := (SELECT id FROM users WHERE email = 'nuevo@eco.com');
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM credit_purchases WHERE user_id = v_carlos_id) THEN
-        CALL sp_comprar_creditos(v_carlos_id, 100, 100.00, 'ref_carlos123');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM credit_purchases WHERE user_id = v_lucia_id) THEN
-        CALL sp_comprar_creditos(v_lucia_id, 50, 50.00, 'ref_lucia456');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM credit_purchases WHERE user_id = v_roberto_id) THEN
-        CALL sp_comprar_creditos(v_roberto_id, 200, 200.00, 'ref_roberto789');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM credit_purchases WHERE user_id = v_nuevo_id) THEN
-        CALL sp_comprar_creditos(v_nuevo_id, 20, 20.00, 'ref_nuevo101');
-    END IF;
-END $$;
+-- 6. PUBLICACIONES (Asegurando que material y unidad coincidan con equivalencias)
 
--- 5. INTERCAMBIOS CON FECHAS RETROACTIVAS
-DO $$
-DECLARE
-    v_carlos_id INT := (SELECT id FROM users WHERE email = 'carlos@eco.com');
-    v_ana_id INT := (SELECT id FROM users WHERE email = 'ana@eco.com');
-    v_roberto_id INT := (SELECT id FROM users WHERE email = 'roberto@eco.com');
-    v_lucia_id INT := (SELECT id FROM users WHERE email = 'lucia@eco.com');
-    v_listing_libros_id INT := (SELECT id FROM listings WHERE title = 'Lote de 5 Novelas de Ficción');
-    v_listing_monitor_id INT := (SELECT id FROM listings WHERE title = 'Monitor Gamer 24" Full HD');
-    v_libros_credits NUMERIC;
-    v_monitor_credits NUMERIC;
-    v_balance NUMERIC;
-BEGIN
-    IF v_listing_libros_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM exchanges WHERE listing_id = v_listing_libros_id) THEN
-        SELECT unit_credits INTO v_libros_credits FROM listings WHERE id = v_listing_libros_id;
-        
-        SELECT balance INTO v_balance FROM wallets WHERE user_id = v_carlos_id FOR UPDATE;
-        UPDATE wallets SET balance = balance - v_libros_credits WHERE user_id = v_carlos_id RETURNING balance INTO v_balance;
-        INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
-        VALUES (v_carlos_id, 'intercambio_debito', -v_libros_credits, v_balance, v_listing_libros_id);
-        
-        SELECT balance INTO v_balance FROM wallets WHERE user_id = v_ana_id FOR UPDATE;
-        UPDATE wallets SET balance = balance + v_libros_credits WHERE user_id = v_ana_id RETURNING balance INTO v_balance;
-        INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
-        VALUES (v_ana_id, 'intercambio_credito', v_libros_credits, v_balance, v_listing_libros_id);
-        
-        INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, exchange_date)
-        VALUES (v_listing_libros_id, v_carlos_id, v_ana_id, 1, v_libros_credits, v_libros_credits, NOW() - INTERVAL '50 days');
-        
-        UPDATE listings SET status = 'intercambiada' WHERE id = v_listing_libros_id;
-    END IF;
-    
-    IF v_listing_monitor_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM exchanges WHERE listing_id = v_listing_monitor_id) THEN
-        SELECT unit_credits INTO v_monitor_credits FROM listings WHERE id = v_listing_monitor_id;
-        
-        SELECT balance INTO v_balance FROM wallets WHERE user_id = v_roberto_id FOR UPDATE;
-        UPDATE wallets SET balance = balance - v_monitor_credits WHERE user_id = v_roberto_id RETURNING balance INTO v_balance;
-        INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
-        VALUES (v_roberto_id, 'intercambio_debito', -v_monitor_credits, v_balance, v_listing_monitor_id);
-        
-        SELECT balance INTO v_balance FROM wallets WHERE user_id = v_lucia_id FOR UPDATE;
-        UPDATE wallets SET balance = balance + v_monitor_credits WHERE user_id = v_lucia_id RETURNING balance INTO v_balance;
-        INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
-        VALUES (v_lucia_id, 'intercambio_credito', v_monitor_credits, v_balance, v_listing_monitor_id);
-        
-        INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, exchange_date)
-        VALUES (v_listing_monitor_id, v_roberto_id, v_lucia_id, 1, v_monitor_credits, v_monitor_credits, NOW() - INTERVAL '18 days');
-        
-        UPDATE listings SET status = 'intercambiada' WHERE id = v_listing_monitor_id;
-    END IF;
-END $$;
+-- Sillas (Madera, kg) - Hogar
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='ana@email.com'), 'Sillas de Roble', 'Juego de 4 sillas de roble macizo, restauradas.', 
+ (SELECT id FROM categories WHERE name='Hogar'), (SELECT id FROM subcategories WHERE name='Muebles'),
+ (SELECT id FROM materials WHERE name='Madera'), 
+ 20, -- 20 kg de madera aprox
+ 50, 'kg', '/uploads/sillas.jpg', 'activa');
 
--- 6. RECLAMOS
-DO $$
-DECLARE
-    v_exchange1_id INT := (SELECT id FROM exchanges WHERE listing_id = (SELECT id FROM listings WHERE title = 'Lote de 5 Novelas de Ficción'));
-    v_exchange2_id INT := (SELECT id FROM exchanges WHERE listing_id = (SELECT id FROM listings WHERE title = 'Monitor Gamer 24" Full HD'));
-    v_carlos_id INT := (SELECT id FROM users WHERE email = 'carlos@eco.com');
-    v_roberto_id INT := (SELECT id FROM users WHERE email = 'roberto@eco.com');
-BEGIN
-    IF v_exchange1_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM claims WHERE exchange_id = v_exchange1_id) THEN
-        INSERT INTO claims (exchange_id, claimant_id, reason, status, created_at)
-        VALUES (v_exchange1_id, v_carlos_id, 'Los libros estaban en peor estado de lo descrito.', 'resuelto', NOW() - INTERVAL '48 days');
-    END IF;
-    IF v_exchange2_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM claims WHERE exchange_id = v_exchange2_id) THEN
-        INSERT INTO claims (exchange_id, claimant_id, reason, status, created_at)
-        VALUES (v_exchange2_id, v_roberto_id, 'El monitor no enciende, tiene un pixel muerto.', 'abierto', NOW() - INTERVAL '17 days');
-    END IF;
-END $$;
+-- Camisetas (Algodón, unidades) - Ropa
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='ana@email.com'), 'Camiseta Vintage', 'Algodón 100% orgánico, talla M, buen estado.', 
+ (SELECT id FROM categories WHERE name='Ropa'), (SELECT id FROM subcategories WHERE name='Camisetas'),
+ (SELECT id FROM materials WHERE name='Algodón'), 
+ 3, -- 3 unidades
+ 15, 'unidades', '/uploads/ropa.jpg', 'activa');
+
+-- Smartphone Usado (Electrónicos, unidades) - Electrónica
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='carlos@email.com'), 'Smartphone Android Usado', 'Modelo X, funcionando perfectamente, incluye cargador.', 
+ (SELECT id FROM categories WHERE name='Electrónica'), (SELECT id FROM subcategories WHERE name='Smartphones'),
+ (SELECT id FROM materials WHERE name='Electrónicos'), 
+ 1, -- 1 unidad
+ 100, 'unidades', '/uploads/smartphone.jpg', 'activa');
+
+-- Libros de Novela (Papel, unidades) - Libros
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='carlos@email.com'), 'Colección de Novelas Fantásticas', '5 libros de tapa dura en excelente estado.', 
+ (SELECT id FROM categories WHERE name='Libros'), (SELECT id FROM subcategories WHERE name='Novelas'),
+ (SELECT id FROM materials WHERE name='Papel'), 
+ 5, -- 5 unidades
+ 25, 'unidades', '/uploads/novelas.jpg', 'activa');
+
+-- Botellas de Vidrio (Vidrio, unidades) - Hogar (Utensilios)
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='maria@email.com'), 'Set de Botellas de Vidrio', '6 botellas de 1L con tapa, ideal para bebidas caseras.', 
+ (SELECT id FROM categories WHERE name='Hogar'), (SELECT id FROM subcategories WHERE name='Utensilios de Cocina'),
+ (SELECT id FROM materials WHERE name='Vidrio'), 
+ 6, -- 6 unidades
+ 10, 'unidades', '/uploads/botellas.jpg', 'activa');
+
+-- Chaqueta Impermeable (Textil Sintético, unidades) - Ropa
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='maria@email.com'), 'Chaqueta Impermeable Talla L', 'Poliéster reciclado, perfecta para la lluvia.', 
+ (SELECT id FROM categories WHERE name='Ropa'), (SELECT id FROM subcategories WHERE name='Abrigos'),
+ (SELECT id FROM materials WHERE name='Textil Sintético'), 
+ 1, -- 1 unidad
+ 40, 'unidades', '/uploads/chaqueta.jpg', 'activa');
+
+-- Mesa Auxiliar (Metal, kg) - Hogar (Muebles)
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='ana@email.com'), 'Mesa Auxiliar de Metal', 'Pequeña mesa de centro de metal forjado.', 
+ (SELECT id FROM categories WHERE name='Hogar'), (SELECT id FROM subcategories WHERE name='Muebles'),
+ (SELECT id FROM materials WHERE name='Metal'), 
+ 5, -- 5 kg
+ 30, 'kg', '/uploads/mesa_metal.jpg', 'activa');
+
+-- Juguetes de Plástico (Plástico, kg) - Hogar (Decoración, si no hay otra)
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='carlos@email.com'), 'Lote de Juguetes Infantiles', 'Juguetes variados de plástico duro, buen estado.', 
+ (SELECT id FROM categories WHERE name='Hogar'), (SELECT id FROM subcategories WHERE name='Decoración'), -- Asumiendo que pueden ir en decoración
+ (SELECT id FROM materials WHERE name='Plástico'), 
+ 3, -- 3 kg
+ 20, 'kg', '/uploads/juguetes_plastico.jpg', 'activa');
+
+-- Reparación de Bicicletas (Servicios, unidades - sin material id)
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='maria@email.com'), 'Servicio de Reparación de Bicicletas', 'Ajuste de frenos y cambios, engrase y revisión general.', 
+ (SELECT id FROM categories WHERE name='Servicios'), (SELECT id FROM subcategories WHERE name='Reparaciones'),
+ NULL, -- No material_id para servicios
+ 1, -- 1 servicio
+ 60, 'unidades', '/uploads/reparacion_bici.jpg', 'activa');
+
+-- Libro de Texto (Papel, unidades) - Libros
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='ana@email.com'), 'Libro de Álgebra Lineal', 'Edición actualizada, buen estado, ideal para estudiantes.', 
+ (SELECT id FROM categories WHERE name='Libros'), (SELECT id FROM subcategories WHERE name='Libros de Texto'),
+ (SELECT id FROM materials WHERE name='Papel'), 
+ 1, -- 1 unidad
+ 30, 'unidades', '/uploads/libro_algebra.jpg', 'activa');
