@@ -1,98 +1,129 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Listing, ListingImage } from 'src/entities';
-import { Repository } from 'typeorm';
+import { PgService } from 'src/database/pg.service'; // Import PgService
 import { ImpactService } from '../impact/impact.service';
 
 @Injectable()
 export class ListingsService {
   constructor(
-    @InjectRepository(Listing)
-    private listingsRepository: Repository<Listing>,
-    @InjectRepository(ListingImage)
-    private listingImagesRepository: Repository<ListingImage>,
+    private readonly pgService: PgService, // Inject PgService
     private impactService: ImpactService,
   ) { }
 
   async create(createListingDto: CreateListingDto, authorId: number, imageUrls: string[]) {
-    const listing = this.listingsRepository.create({
-      title: createListingDto.title,
-      description: createListingDto.description,
-      authorId,
-      imageUrl: imageUrls[0], // Keep first image as main for backward compatibility
-      categoryId: Number(createListingDto.categoryId),
-      subcategoryId: Number(createListingDto.subcategoryId),
-      materialId: createListingDto.materialId ? Number(createListingDto.materialId) : undefined,
-      unitCredits: Number(createListingDto.unitCredits),
-      quantity: createListingDto.quantity ? Number(createListingDto.quantity) : undefined,
-      quantityRange: createListingDto.quantityRange,
-      unitLabel: createListingDto.unitLabel,
-    });
+    const {
+      title,
+      description,
+      categoryId,
+      subcategoryId,
+      materialId,
+      unitCredits,
+      quantity,
+      quantityRange,
+      unitLabel,
+    } = createListingDto;
 
-    const savedListing = await this.listingsRepository.save(listing);
+    const query = `
+      INSERT INTO listings (
+        author_id, title, description, category_id, subcategory_id,
+        material_id, quantity, quantity_range, unit_credits, unit_label, image_url
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+      ) RETURNING *;
+    `;
+    const values = [
+      authorId, title, description, Number(categoryId), Number(subcategoryId),
+      materialId ? Number(materialId) : null, quantity ? Number(quantity) : null,
+      quantityRange, Number(unitCredits), unitLabel, imageUrls[0] || null
+    ];
+
+    const result = await this.pgService.query(query, values);
+    const savedListing = result.rows[0];
 
     // Save all images
-    const images = imageUrls.map((url, index) =>
-      this.listingImagesRepository.create({
-        listingId: savedListing.id,
-        imageUrl: url,
-        displayOrder: index,
-      })
+    if (imageUrls && imageUrls.length > 0) {
+      const imageInsertQueries = imageUrls.map((url, index) => {
+        return `
+          INSERT INTO listing_images (listing_id, image_url, display_order)
+          VALUES ($1, $2, $3);
+        `;
+      });
+      const imageInsertValues = imageUrls.flatMap((url, index) => [savedListing.id, url, index]);
+
+      // Execute in a transaction if needed, for simplicity executing individually for now
+      for (let i = 0; i < imageInsertQueries.length; i++) {
+        await this.pgService.query(imageInsertQueries[i], [savedListing.id, imageUrls[i], i]);
+      }
+    }
+    
+    // Fetch images to return with the listing
+    const imagesResult = await this.pgService.query(
+      `SELECT id, listing_id as "listingId", image_url as "imageUrl", display_order as "displayOrder" FROM listing_images WHERE listing_id = $1 ORDER BY display_order ASC;`,
+      [savedListing.id]
     );
-    await this.listingImagesRepository.save(images);
-    savedListing.images = images;
+    savedListing.images = imagesResult.rows;
 
     return savedListing;
   }
 
   async findAll() {
-    const listings = await this.listingsRepository.find({
-      relations: ['author'],
-      select: {
-        author: {
-          name: true,
-        }
-      },
-      order: {
-        createdAt: 'DESC'
-      }
-    });
+    const query = `
+      SELECT
+        l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
+        l.unit_credits as "unitCredits", l.quantity, l.unit_label as "unitLabel",
+        l.created_at as "createdAt",
+        u.name as author_name, u.id as author_id
+      FROM listings l
+      JOIN users u ON l.author_id = u.id
+      ORDER BY l.created_at DESC;
+    `;
+    const result = await this.pgService.query(query);
 
-    return Promise.all(listings.map(async (listing) => {
+    return Promise.all(result.rows.map(async (listing) => {
       let potentialImpact = [];
-      if (listing.materialId && listing.quantity && listing.unitLabel) {
+      if (listing.material_id && listing.quantity && listing.unitLabel) {
         potentialImpact = await this.impactService.calculateImpactPreview({
-          material_id: listing.materialId,
+          material_id: listing.material_id,
           quantity: listing.quantity,
           quantity_unit: listing.unitLabel
         });
       }
       return {
         ...listing,
+        author: { name: listing.author_name, id: listing.author_id },
         potentialImpact
       };
     }));
   }
 
   async findOne(id: number) {
-    const listing = await this.listingsRepository.findOne({
-      where: { id },
-      relations: ['author', 'category', 'images'],
-      select: {
-        author: { name: true, id: true },
-        category: { name: true },
-      },
-      order: {
-        images: {
-          displayOrder: 'ASC'
-        }
-      }
-    });
+    const query = `
+      SELECT
+        l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
+        l.unit_credits as "unitCredits", l.quantity, l.unit_label as "unitLabel",
+        l.quantity_range as "quantityRange", l.material_id as "materialId",
+        l.created_at as "createdAt",
+        u.name as author_name, u.id as author_id,
+        c.name as category_name, c.id as category_id
+      FROM listings l
+      JOIN users u ON l.author_id = u.id
+      JOIN categories c ON l.category_id = c.id
+      WHERE l.id = $1;
+    `;
+    const result = await this.pgService.query(query, [id]);
+    const listing = result.rows[0];
+
     if (!listing) {
       throw new NotFoundException(`Publicación con ID ${id} no encontrada.`);
     }
+
+    const imagesResult = await this.pgService.query(
+      `SELECT id, listing_id as "listingId", image_url as "imageUrl", display_order as "displayOrder" FROM listing_images WHERE listing_id = $1 ORDER BY display_order ASC;`,
+      [id]
+    );
+    listing.images = imagesResult.rows;
+
     let potentialImpact = [];
     if (listing.materialId && listing.quantity && listing.unitLabel) {
       potentialImpact = await this.impactService.calculateImpactPreview({
@@ -102,41 +133,87 @@ export class ListingsService {
       });
     }
 
-    // Devolvemos un objeto plano que coincida con la interfaz del frontend
     return {
       ...listing,
-      authorName: listing.author.name,
+      author: { name: listing.author_name, id: listing.author_id },
+      category: { name: listing.category_name, id: listing.category_id },
       potentialImpact
     };
   }
 
-  findByAuthor(authorId: number) {
-    return this.listingsRepository.find({ where: { authorId }, order: { createdAt: 'DESC' } });
+  async findByAuthor(authorId: number) {
+    const query = `
+      SELECT
+        id, title, description, image_url as "imageUrl", status,
+        unit_credits as "unitCredits", quantity, unit_label as "unitLabel",
+        created_at as "createdAt"
+      FROM listings
+      WHERE author_id = $1
+      ORDER BY created_at DESC;
+    `;
+    const result = await this.pgService.query(query, [authorId]);
+    return result.rows;
   }
 
   async update(id: number, updateListingDto: UpdateListingDto, userId: number, newImageUrls: string[]) {
-    const listing = await this.listingsRepository.findOne({
-      where: { id },
-      relations: ['images', 'author']
-    });
+    const existingListingQuery = await this.pgService.query(
+      `SELECT author_id as "authorId" FROM listings WHERE id = $1;`,
+      [id]
+    );
+    const existingListing = existingListingQuery.rows[0];
 
-    if (!listing) throw new NotFoundException('Publicación no encontrada');
-    if (listing.author.id !== userId) throw new ForbiddenException('No tienes permiso para editar esta publicación');
+    if (!existingListing) throw new NotFoundException('Publicación no encontrada');
+    if (existingListing.authorId !== userId) throw new ForbiddenException('No tienes permiso para editar esta publicación');
 
-    // 1. Actualizar campos de texto
-    if (updateListingDto.title) listing.title = updateListingDto.title;
-    if (updateListingDto.description) listing.description = updateListingDto.description;
-    if (updateListingDto.categoryId) listing.categoryId = Number(updateListingDto.categoryId);
-    if (updateListingDto.subcategoryId) listing.subcategoryId = Number(updateListingDto.subcategoryId);
-    if (updateListingDto.materialId) listing.materialId = Number(updateListingDto.materialId);
-    if (updateListingDto.unitCredits) listing.unitCredits = Number(updateListingDto.unitCredits);
-    if (updateListingDto.quantity) listing.quantity = Number(updateListingDto.quantity);
-    if (updateListingDto.unitLabel) listing.unitLabel = updateListingDto.unitLabel;
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+    let paramIndex = 1;
+
+    if (updateListingDto.title !== undefined) {
+      updateFields.push(`title = $${paramIndex++}`);
+      updateValues.push(updateListingDto.title);
+    }
+    if (updateListingDto.description !== undefined) {
+      updateFields.push(`description = $${paramIndex++}`);
+      updateValues.push(updateListingDto.description);
+    }
+    if (updateListingDto.categoryId !== undefined) {
+      updateFields.push(`category_id = $${paramIndex++}`);
+      updateValues.push(Number(updateListingDto.categoryId));
+    }
+    if (updateListingDto.subcategoryId !== undefined) {
+      updateFields.push(`subcategory_id = $${paramIndex++}`);
+      updateValues.push(Number(updateListingDto.subcategoryId));
+    }
+    if (updateListingDto.materialId !== undefined) {
+      updateFields.push(`material_id = $${paramIndex++}`);
+      updateValues.push(Number(updateListingDto.materialId));
+    }
+    if (updateListingDto.unitCredits !== undefined) {
+      updateFields.push(`unit_credits = $${paramIndex++}`);
+      updateValues.push(Number(updateListingDto.unitCredits));
+    }
+    if (updateListingDto.quantity !== undefined) {
+      updateFields.push(`quantity = $${paramIndex++}`);
+      updateValues.push(Number(updateListingDto.quantity));
+    }
+    if (updateListingDto.unitLabel !== undefined) {
+      updateFields.push(`unit_label = $${paramIndex++}`);
+      updateValues.push(updateListingDto.unitLabel);
+    }
+
+    if (updateFields.length > 0) {
+      const updateQuery = `
+        UPDATE listings
+        SET ${updateFields.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING *;
+      `;
+      updateValues.push(id);
+      await this.pgService.query(updateQuery, updateValues);
+    }
 
     // 2. Manejo de Imágenes
-
-    // A) Determinar qué imágenes antiguas se conservan
-    // El frontend enviará 'keptImageUrls' como un string JSON (ej: "['/uploads/a.jpg', '/uploads/b.jpg']")
     let keptUrls: string[] = [];
     if (updateListingDto.keptImageUrls) {
       try {
@@ -145,33 +222,60 @@ export class ListingsService {
       } catch (e) { keptUrls = []; }
     }
 
-    // B) Borrar de la DB las imágenes que no están en la lista de 'keptUrls'
-    const imagesToDelete = listing.images.filter(img => !keptUrls.includes(img.imageUrl));
+    // A) Borrar de la DB las imágenes que no están en la lista de 'keptUrls'
+    // First, get current images
+    const currentImagesResult = await this.pgService.query(
+      `SELECT id, image_url as "imageUrl" FROM listing_images WHERE listing_id = $1;`,
+      [id]
+    );
+    const currentImages = currentImagesResult.rows;
+    
+    const imagesToDelete = currentImages.filter(img => !keptUrls.includes(img.imageUrl));
     if (imagesToDelete.length > 0) {
-      await this.listingImagesRepository.remove(imagesToDelete);
+      const deleteIds = imagesToDelete.map(img => img.id);
+      await this.pgService.query(`DELETE FROM listing_images WHERE id = ANY($1);`, [deleteIds]);
     }
 
-    // C) Guardar las nuevas imágenes
+    // B) Guardar las nuevas imágenes
     if (newImageUrls.length > 0) {
-      const newImages = newImageUrls.map((url, index) =>
-        this.listingImagesRepository.create({
-          listingId: listing.id,
-          imageUrl: url,
-          displayOrder: keptUrls.length + index, // Ordenar después de las existentes
-        })
-      );
-      await this.listingImagesRepository.save(newImages);
+      const newImagesInsertValues = newImageUrls.map((url, index) => [id, url, keptUrls.length + index]);
+      const newImagesInsertQuery = `
+        INSERT INTO listing_images (listing_id, image_url, display_order)
+        VALUES ${newImagesInsertValues.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ')};
+      `;
+      await this.pgService.query(newImagesInsertQuery, newImagesInsertValues.flat());
     }
 
-    // Actualizar la imagen principal (thumbnail) si cambió
-    // Prioridad: 1. Primera imagen conservada, 2. Primera imagen nueva
-    const allImages = await this.listingImagesRepository.find({ where: { listingId: id }, order: { displayOrder: 'ASC' } });
+    // C) Actualizar la imagen principal (thumbnail) si cambió
+    const allImagesResult = await this.pgService.query(
+      `SELECT image_url as "imageUrl" FROM listing_images WHERE listing_id = $1 ORDER BY display_order ASC;`,
+      [id]
+    );
+    const allImages = allImagesResult.rows;
+
+    let newMainImageUrl: string | null = null;
     if (allImages.length > 0) {
-      listing.imageUrl = allImages[0].imageUrl;
-    } else {
-      listing.imageUrl = null; // o una imagen por defecto
+      newMainImageUrl = allImages[0].imageUrl;
     }
 
-    return this.listingsRepository.save(listing);
+    await this.pgService.query(
+      `UPDATE listings SET image_url = $1 WHERE id = $2;`,
+      [newMainImageUrl, id]
+    );
+
+    const updatedListingResult = await this.pgService.query(
+      `SELECT * FROM listings WHERE id = $1;`,
+      [id]
+    );
+    const updatedListing = updatedListingResult.rows[0];
+
+    // Fetch images to return with the updated listing
+    const finalImagesResult = await this.pgService.query(
+      `SELECT id, listing_id as "listingId", image_url as "imageUrl", display_order as "displayOrder" FROM listing_images WHERE listing_id = $1 ORDER BY display_order ASC;`,
+      [id]
+    );
+    updatedListing.images = finalImagesResult.rows;
+
+    return updatedListing;
   }
 }

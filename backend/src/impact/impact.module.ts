@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ImpactService } from './impact.service';
 import { ImpactController } from './impact.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Material, ImpactMetric, ImpactEquivalence } from '../entities';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Material, ImpactMetric, ImpactEquivalence])],
+  imports: [DatabaseModule], // Use DatabaseModule to provide PgService
   providers: [ImpactService],
   controllers: [ImpactController],
   exports: [ImpactService],
 })
 export class ImpactModule {}
+

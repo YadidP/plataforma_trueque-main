@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { MaterialsService } from './materials.service';
 import { MaterialsController } from './materials.controller';
-import { Material } from 'src/entities';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Material])],
+  imports: [DatabaseModule], // Use DatabaseModule to provide PgService
   controllers: [MaterialsController],
   providers: [MaterialsService],
 })
 export class MaterialsModule {}
+

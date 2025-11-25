@@ -1,22 +1,23 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 
 @ApiTags('wallet')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('wallet')
+@UseGuards(AuthenticatedGuard)
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @Get('saldo')
   getBalance(@Req() req) {
-    return this.walletService.getBalance(req.user.id);
+    const userId = req.session.user.id;
+    return this.walletService.getBalance(userId);
   }
 
   @Get('movimientos')
   getMovements(@Req() req) {
-    return this.walletService.getMovements(req.user.id);
+    const userId = req.session.user.id;
+    return this.walletService.getMovements(userId);
   }
 }

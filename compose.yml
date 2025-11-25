@@ -30,7 +30,6 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/trueque
-      - JWT_SECRET=supersecreto
       - PORT=3000
     depends_on:
       db:

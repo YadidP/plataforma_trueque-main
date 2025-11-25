@@ -1,17 +1,3 @@
-export enum UserRole {
-  USER = 'usuario',
-  ENTREPRENEUR = 'emprendedor',
-  NGO = 'ong',
-  ADMIN = 'admin',
-}
-
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  role: UserRole;
-}
-
 export interface Wallet {
   userId: number;
   balance: number;
@@ -87,6 +73,9 @@ export interface Listing {
   images?: ListingImage[];
   createdAt: string;
   potentialImpact?: ImpactMetricResult[];
+  // Propiedades adicionales retornadas por el backend en algunos endpoints
+  author?: { id: number; name: string };
+  category?: { id: number; name: string };
 }
 
 export interface Exchange {

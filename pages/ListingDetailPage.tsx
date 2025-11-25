@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import * as api from '../services/api';
 import { Listing, ListingStatus, Wallet } from '../types';
-import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../hooks/useNotification';
+import { useAuth } from '../hooks/useAuth';
 import Spinner from '../components/Spinner';
 
 const ListingDetailPage = () => {
@@ -18,8 +18,9 @@ const ListingDetailPage = () => {
   const [isReporting, setIsReporting] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportLoading, setReportLoading] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
-  const { isAuthenticated, user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { addNotification } = useNotification();
   const navigate = useNavigate();
 
@@ -32,41 +33,51 @@ const ListingDetailPage = () => {
           const listingData = await api.getListingById(listingId);
           setListing(listingData);
 
-          const categoryData = await api.getCategoryById(listingData.categoryId);
-          setCategoryName(categoryData?.name || 'Desconocida');
-
-          if (isAuthenticated && user) {
-            const walletData = await api.getWallet();
-            setWallet(walletData);
+          // El backend ya retorna category: { name, id }, lo usamos directamente
+          if (listingData.category) {
+            setCategoryName(listingData.category.name || 'Desconocida');
+          } else {
+            setCategoryName('Desconocida');
           }
-        } catch (error) {
+
+          // Intentar obtener wallet (no crítico)
+          if (isAuthenticated && user) {
+            try {
+              const walletData = await api.getWallet();
+              setWallet(walletData);
+            } catch (walletError) {
+              console.warn("Error al cargar wallet:", walletError);
+            }
+          }
+
+          setLoading(false);
+        } catch (error: any) {
           console.error("Error al cargar la publicación:", error);
           addNotification('La publicación que buscas no existe o no está disponible.', 'error');
-          navigate('/listings'); // Redirigir a la página de listados
-        } finally {
+          navigate('/listings');
           setLoading(false);
         }
       }
     };
     fetchListing();
-  }, [id, isAuthenticated, user, navigate, addNotification]);
+  }, [id, isAuthenticated, navigate, addNotification]);
 
   const handleExchange = async () => {
-    if (!listing || !user) return;
+    if (!listing || !user || !wallet) return;
 
-    // Forzamos Number() para asegurar comparación numérica matemática
-    if (wallet && Number(wallet.balance) < Number(listing.unitCredits)) {
+    const totalCost = listing.unitCredits * quantity;
+
+    if (Number(wallet.balance) < totalCost) {
       addNotification('Saldo insuficiente para completar esta operación.', 'error');
       return;
     }
 
     setExchangeLoading(true);
     try {
-      await api.createExchange(listing.id, 1);
+      await api.createExchange(listing.id, quantity);
       addNotification('¡Intercambio realizado con éxito!', 'success');
       navigate('/exchanges');
     } catch (error) {
-      // El interceptor de Axios ya extrae el mensaje de error del backend
       addNotification(`Error: ${error}`, 'error');
     } finally {
       setExchangeLoading(false);
@@ -92,7 +103,6 @@ const ListingDetailPage = () => {
     }
   };
 
-
   if (loading) return <Spinner />;
   if (!listing) return <p className="text-center">Cargando publicación...</p>;
 
@@ -112,7 +122,7 @@ const ListingDetailPage = () => {
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
-  const isOwner = user?.id === listing.authorId;
+  const isOwner = user?.id === listing.author?.id;
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto">
@@ -123,8 +133,8 @@ const ListingDetailPage = () => {
             alt={listing.title}
             className="w-full h-auto object-cover rounded-lg shadow-md"
             onError={(e) => {
-              console.error(`Image error for detail listing ${listing.id}: src=${(e.target as HTMLImageElement).src}`); // Log if fails
-              (e.target as HTMLImageElement).src = '/placeholder.jpg'; // Fallback if image fails to load
+              console.error(`Image error for detail listing ${listing.id}: src=${(e.target as HTMLImageElement).src}`);
+              (e.target as HTMLImageElement).src = '/placeholder.jpg';
             }}
           />
           {images.length > 1 && (
@@ -149,8 +159,7 @@ const ListingDetailPage = () => {
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
-                    className={`w-12 h-12 rounded border-2 overflow-hidden transition-all ${idx === currentImageIndex ? 'border-green-primary' : 'border-gray-300'
-                      }`}
+                    className={`w-12 h-12 rounded border-2 overflow-hidden transition-all ${idx === currentImageIndex ? 'border-green-primary' : 'border-gray-300'}`}
                   >
                     <img src={img.imageUrl} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
                   </button>
@@ -162,7 +171,7 @@ const ListingDetailPage = () => {
         <div>
           <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">{categoryName}</span>
           <h1 className="text-4xl font-bold text-green-dark mt-2 mb-4">{listing.title}</h1>
-          <p className="text-gray-600 mb-4">Publicado por: <span className="font-semibold">{listing.authorName}</span></p>
+          <p className="text-gray-600 mb-4">Publicado por: <span className="font-semibold">{listing.author?.name || 'Desconocido'}</span></p>
           <p className="text-gray-700 text-lg mb-6">{listing.description}</p>
 
           <div className="bg-gray-100 p-4 rounded-lg mb-6">
@@ -205,11 +214,30 @@ const ListingDetailPage = () => {
 
       {isConfirming && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
             <h2 className="text-2xl font-bold mb-4">Confirmar Intercambio</h2>
-            <p>Estás a punto de intercambiar <span className="font-bold">{listing.unitCredits} créditos</span> por "{listing.title}".</p>
-            <p className="my-2">Tu saldo actual: {wallet?.balance || 0} créditos.</p>
-            <p>Saldo después del intercambio: {(wallet?.balance || 0) - listing.unitCredits} créditos.</p>
+            <p>Intercambiarás "{listing.title}".</p>
+            
+            <div className="my-4">
+              <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">Cantidad a intercambiar:</label>
+              <input
+                type="number"
+                id="quantity"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm p-2"
+                min="1"
+              />
+            </div>
+
+            <div className="bg-gray-100 p-4 rounded-lg">
+              <p>Costo por unidad: <span className="font-bold">{listing.unitCredits} créditos</span></p>
+              <p>Costo Total: <span className="font-bold">{listing.unitCredits * quantity} créditos</span></p>
+              <hr className="my-2"/>
+              <p>Tu saldo actual: {wallet?.balance || 0} créditos.</p>
+              <p>Saldo después del intercambio: <span className="font-bold">{(wallet?.balance || 0) - (listing.unitCredits * quantity)} créditos.</span></p>
+            </div>
+
             <div className="mt-6 flex justify-end space-x-4">
               <button onClick={() => setIsConfirming(false)} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
               <button onClick={handleExchange} disabled={exchangeLoading} className="px-4 py-2 bg-green-primary text-white rounded hover:bg-green-dark disabled:bg-gray-400">

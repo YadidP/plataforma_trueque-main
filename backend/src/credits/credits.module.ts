@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { CreditsService } from './credits.service';
 import { CreditsController } from './credits.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { CreditPurchase } from 'src/entities';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CreditPurchase])],
+  imports: [DatabaseModule], // Use DatabaseModule to provide PgService
   controllers: [CreditsController],
   providers: [CreditsService],
 })
 export class CreditsModule {}
+

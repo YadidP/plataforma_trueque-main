@@ -1,49 +1,64 @@
-
 import React from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const Header = () => {
   const { isAuthenticated, user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
-  
-  const activeLinkClass = "text-green-light font-bold";
-  const inactiveLinkClass = "hover:text-green-light transition-colors";
 
   return (
-    <header className="bg-green-primary text-white shadow-md">
-      <nav className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-4">
-        <Link to="/" className="text-2xl font-bold">
-          Créditos Verdes
+    <header className="bg-green-primary text-white shadow-md sticky top-0 z-40">
+      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <Link to="/" className="text-2xl font-bold hover:text-green-100 transition-colors">
+          EcoTrade
         </Link>
-        <div className="flex items-center space-x-6 text-lg">
-          <NavLink to="/listings" className={({isActive}) => isActive ? activeLinkClass : inactiveLinkClass}>Explorar</NavLink>
-          {isAuthenticated ? (
+
+        <nav className="flex items-center gap-6">
+          <Link to="/listings" className="hover:text-green-100 transition-colors font-semibold">
+            Explorar
+          </Link>
+
+          {isAuthenticated && (
             <>
-              <NavLink to="/dashboard" className={({isActive}) => isActive ? activeLinkClass : inactiveLinkClass}>Dashboard</NavLink>
-              <NavLink to="/wallet" className={({isActive}) => isActive ? activeLinkClass : inactiveLinkClass}>Mi Billetera</NavLink>
-              {isAdmin() && <NavLink to="/admin" className={({isActive}) => isActive ? activeLinkClass : inactiveLinkClass}>Admin</NavLink>}
-              <span className="text-gray-300">|</span>
-              <span className="font-semibold">{user?.name}</span>
-              <button onClick={handleLogout} className="bg-green-accent hover:bg-green-dark text-white font-bold py-2 px-4 rounded transition-colors">
-                Salir
-              </button>
-            </>
-          ) : (
-            <>
-              <NavLink to="/login" className={({isActive}) => isActive ? activeLinkClass : inactiveLinkClass}>Ingresar</NavLink>
-              <Link to="/register" className="bg-green-accent hover:bg-green-dark text-white font-bold py-2 px-4 rounded transition-colors">
-                Registrarse
+              <Link to="/dashboard" className="hover:text-green-100 transition-colors font-semibold">
+                Dashboard
               </Link>
+              <Link to="/wallet" className="hover:text-green-100 transition-colors font-semibold">
+                Mi Billetera
+              </Link>
+              {isAdmin && (
+                <Link to="/admin" className="hover:text-green-100 transition-colors font-semibold">
+                  Admin
+                </Link>
+              )}
             </>
           )}
-        </div>
-      </nav>
+
+          {isAuthenticated ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm">Hola, {user?.name}</span>
+              <button
+                onClick={handleLogout}
+                className="bg-white text-green-primary px-4 py-2 rounded-lg hover:bg-green-100 transition-colors font-semibold"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="bg-white text-green-primary px-4 py-2 rounded-lg hover:bg-green-100 transition-colors font-semibold"
+            >
+              Iniciar Sesión
+            </Link>
+          )}
+        </nav>
+      </div>
     </header>
   );
 };

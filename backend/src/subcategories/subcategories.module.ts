@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Subcategory } from 'src/entities/subcategory.entity';
 import { SubcategoriesController } from './subcategories.controller';
 import { SubcategoriesService } from './subcategories.service';
-import { Material } from 'src/entities/material.entity';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Subcategory, Material])],
+  imports: [DatabaseModule], // Use DatabaseModule to provide PgService
   controllers: [SubcategoriesController],
   providers: [SubcategoriesService],
 })
 export class SubcategoriesModule {}
+

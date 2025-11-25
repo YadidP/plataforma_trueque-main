@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFiles, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Req, UseInterceptors, UploadedFiles, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, UseGuards } from '@nestjs/common';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { FilesService } from 'src/files/files.service';
+import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
 
 @ApiTags('listings')
 @Controller('listings')
@@ -15,9 +15,8 @@ export class ListingsController {
     private readonly filesService: FilesService,
   ) {}
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @UseGuards(AuthenticatedGuard)
   @UseInterceptors(FilesInterceptor('imageFiles', 10))
   @ApiConsumes('multipart/form-data')
   async create(
@@ -36,12 +35,12 @@ export class ListingsController {
     const imageUrls = await Promise.all(
       files.map(file => this.filesService.saveFile(file))
     );
-    return this.listingsService.create(createListingDto, req.user.id, imageUrls);
+    const userId = req.session.user.id;
+    return this.listingsService.create(createListingDto, userId, imageUrls);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Patch(':id')
+  @UseGuards(AuthenticatedGuard)
   @UseInterceptors(FilesInterceptor('imageFiles', 10))
   @ApiConsumes('multipart/form-data')
   async update(
@@ -63,7 +62,8 @@ export class ListingsController {
       ? await Promise.all(files.map(file => this.filesService.saveFile(file)))
       : [];
       
-    return this.listingsService.update(+id, updateListingDto, req.user.id, newImageUrls);
+    const userId = req.session.user.id;
+    return this.listingsService.update(+id, updateListingDto, userId, newImageUrls);
   }
 
   @Get()
@@ -71,11 +71,11 @@ export class ListingsController {
     return this.listingsService.findAll();
   }
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Get('my-listings')
+  @UseGuards(AuthenticatedGuard)
   findMyListings(@Req() req) {
-    return this.listingsService.findByAuthor(req.user.id);
+    const userId = req.session.user.id;
+    return this.listingsService.findByAuthor(userId);
   }
 
   @Get(':id')

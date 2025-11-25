@@ -1,5 +1,5 @@
 import http from './http';
-import type { User, Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport, ClaimsReport, AdvancedReport } from '../types';
+import type { Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport, ClaimsReport, AdvancedReport } from '../types';
 
 // Helper to ensure full /uploads/ path and fallback
 const getImageUrl = (path: string | undefined): string => {
@@ -8,18 +8,23 @@ const getImageUrl = (path: string | undefined): string => {
   return path.startsWith('/') ? path : `/${path}`;
 };
 
-// --- AUTH ---
-export const login = async (email: string, password: string): Promise<{ accessToken: string }> => {
-  const response = await http.post('/auth/login', { email, password });
-  return response.data;
-};
-
-export const register = async (name: string, email: string, password: string): Promise<{ accessToken: string }> => {
+// --- AUTHENTICATION ---
+export const register = async (name: string, email: string, password: string) => {
   const response = await http.post('/auth/register', { name, email, password });
   return response.data;
 };
 
-export const getMe = async (): Promise<User> => {
+export const login = async (email: string, password: string) => {
+  const response = await http.post('/auth/login', { email, password });
+  return response.data;
+};
+
+export const logout = async () => {
+  const response = await http.post('/auth/logout');
+  return response.data;
+};
+
+export const getCurrentUser = async () => {
   const response = await http.get('/auth/me');
   return response.data;
 };

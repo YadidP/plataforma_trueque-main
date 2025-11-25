@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PurchaseCreditsDto } from './dto/purchase-credits.dto';
-import { CreditPackage } from 'src/entities';
-import { DataSource } from 'typeorm';
+import { PgService } from 'src/database/pg.service'; // Import PgService
+import { CreditPackage } from './dto/credit-package.dto'; // Import CreditPackage from DTO file
 
 @Injectable()
 export class CreditsService {
@@ -12,7 +12,7 @@ export class CreditsService {
     { id: 3, credits: 200, priceBs: 50.00 },
   ];
 
-  constructor(private dataSource: DataSource) {}
+  constructor(private pgService: PgService) {} // Inject PgService
 
   getCreditPackages(): CreditPackage[] {
     return this.packages;
@@ -27,12 +27,12 @@ export class CreditsService {
 
     try {
       // Llamada al procedimiento almacenado
-      await this.dataSource.query(
+      await this.pgService.query(
         'CALL sp_comprar_creditos($1, $2, $3, $4)',
         [userId, pkg.credits, pkg.priceBs, purchaseCreditsDto.paymentRef],
       );
       return { message: 'Compra realizada con éxito.' };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al ejecutar sp_comprar_creditos:", error);
       throw new InternalServerErrorException('Ocurrió un error al procesar la compra.');
     }

@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { ConfigService } from '@nestjs/config';
+import * as session from 'express-session';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,11 +13,31 @@ async function bootstrap() {
   // Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
 
-  // Seguridad
-  // app.enableCors({
-  //   origin: configService.get('CORS_ORIGIN'),
-  // });
-  app.use(helmet());
+  // CORS habilitado para frontend
+  app.enableCors({
+    origin: 'http://localhost:5173', // URL del frontend
+    credentials: true, // Permitir cookies
+  });
+
+  // Configuración de sesiones
+  app.use(
+    session({
+      secret: configService.get('SESSION_SECRET') || 'super-secret-key-change-in-production',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        maxAge: 24 * 60 * 60 * 1000, // 24 horas
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: false, // true en producción con HTTPS
+      },
+    }),
+  );
+
+  // Seguridad (helmet después de session)
+  app.use(helmet({
+    contentSecurityPolicy: false, // Deshabilitado para desarrollo
+  }));
 
   // Pipes globales para validación automática
   app.useGlobalPipes(new ValidationPipe({

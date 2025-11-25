@@ -1,25 +1,54 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Category } from 'src/entities';
-import { Repository } from 'typeorm';
+import { PgService } from 'src/database/pg.service'; // Import PgService
 
 @Injectable()
 export class CategoriesService {
   constructor(
-    @InjectRepository(Category)
-    private categoriesRepository: Repository<Category>,
+    private readonly pgService: PgService, // Inject PgService
   ) {}
 
-  findAllWithSubcategories() {
-    return this.categoriesRepository.find({ relations: ['subcategories'] });
+  async findAllWithSubcategories() {
+    const query = `
+      SELECT
+        c.id,
+        c.name,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', s.id,
+              'categoryId', s.category_id,
+              'name', s.name
+            ) ORDER BY s.name ASC
+          ) FILTER (WHERE s.id IS NOT NULL),
+          '[]'
+        ) AS subcategories
+      FROM categories c
+      LEFT JOIN subcategories s ON c.id = s.category_id
+      GROUP BY c.id, c.name
+      ORDER BY c.name ASC;
+    `;
+    const result = await this.pgService.query(query);
+    return result.rows;
   }
 
-  findAll() {
-    return this.categoriesRepository.find();
+  async findAll() {
+    const query = `
+      SELECT id, name
+      FROM categories
+      ORDER BY name ASC;
+    `;
+    const result = await this.pgService.query(query);
+    return result.rows;
   }
 
   async findOne(id: number) {
-    const category = await this.categoriesRepository.findOneBy({ id });
+    const query = `
+      SELECT id, name
+      FROM categories
+      WHERE id = $1;
+    `;
+    const result = await this.pgService.query(query, [id]);
+    const category = result.rows[0];
     if (!category) {
       throw new NotFoundException(`Categoría con ID ${id} no encontrada.`);
     }

@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClaimsService } from './claims.service';
 import { ClaimsController } from './claims.controller';
-import { Claim } from '../entities/claim.entity';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Claim])],
+    imports: [DatabaseModule], // Use DatabaseModule to provide PgService
     controllers: [ClaimsController],
     providers: [ClaimsService],
     exports: [ClaimsService],

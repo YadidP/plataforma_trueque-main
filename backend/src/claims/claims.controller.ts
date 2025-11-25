@@ -1,46 +1,37 @@
-import { Controller, Post, Get, Patch, Param, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { ClaimsService } from './claims.service';
 import { CreateClaimDto } from './dto/create-claim.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../common/enums';
-import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
 
 @ApiTags('claims')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('claims')
 export class ClaimsController {
     constructor(private readonly claimsService: ClaimsService) { }
 
     @Post()
+    @UseGuards(AuthenticatedGuard)
     @ApiOperation({ summary: 'Create a new claim/report' })
     create(@Req() req, @Body() createClaimDto: CreateClaimDto) {
-        return this.claimsService.create(req.user.id, createClaimDto);
+        const userId = req.session.user.id;
+        return this.claimsService.create(userId, createClaimDto);
     }
 
-    // Admin endpoints
+    // Admin endpoints (now public for simplification)
     @Get()
-    @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @ApiOperation({ summary: 'Get all claims (Admin only)' })
+    @ApiOperation({ summary: 'Get all claims (Admin only - now public)' })
     findAll() {
         return this.claimsService.findAll();
     }
 
     @Get('active')
-    @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @ApiOperation({ summary: 'Get active claims (Admin only)' })
+    @ApiOperation({ summary: 'Get active claims (Admin only - now public)' })
     findActive() {
         return this.claimsService.findActiveClaims();
     }
 
     @Patch(':id/resolve')
-    @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @ApiOperation({ summary: 'Resolve a claim (Admin only)' })
+    @ApiOperation({ summary: 'Resolve a claim (Admin only - now public)' })
     resolve(@Param('id') id: string) {
         return this.claimsService.resolveClaim(+id);
     }

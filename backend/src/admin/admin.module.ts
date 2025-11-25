@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
-import { Listing } from '../entities/listing.entity';
-import { Exchange } from '../entities/exchange.entity';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Listing, Exchange])],
+  imports: [DatabaseModule], // Use DatabaseModule to provide PgService
   controllers: [AdminController],
   providers: [AdminService],
 })

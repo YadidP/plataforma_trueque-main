@@ -1,89 +1,68 @@
-import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
-import { User, UserRole } from '../types';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import * as api from '../services/api';
 
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+}
+
 interface AuthContextType {
-  isAuthenticated: boolean;
-  user: User | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  isAdmin: () => boolean;
+    user: User | null;
+    isAuthenticated: boolean;
+    isAdmin: boolean;
+    loading: boolean;
+    login: (email: string, password: string) => Promise<void>;
+    register: (name: string, email: string, password: string) => Promise<void>;
+    logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const isFetchingRef = useRef(false);
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
-  const fetchUser = useCallback(async () => {
-    // Evitar múltiples fetches simultáneos
-    if (isFetchingRef.current) return;
-    
-    const token = localStorage.getItem('jwt');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    const isAuthenticated = user !== null;
+    const isAdmin = user?.role === 'admin';
 
-    try {
-      isFetchingRef.current = true;
-      const currentUser = await api.getMe();
-      setUser(currentUser);
-    } catch (error) {
-      console.error("Fallo al obtener el perfil de usuario:", error);
-      localStorage.removeItem('jwt'); // Token inválido o expirado
-      setUser(null);
-    } finally {
-      isFetchingRef.current = false;
-      setLoading(false);
-    }
-  }, []);
+    useEffect(() => {
+        // Verificar si hay una sesión activa al cargar
+        fetchCurrentUser();
+    }, []);
 
-  // Solo se ejecuta una vez al montar
-  useEffect(() => {
-    fetchUser();
-  }, []);
+    const fetchCurrentUser = async () => {
+        try {
+            const response = await api.getCurrentUser();
+            if (response.user) {
+                setUser(response.user);
+            }
+        } catch (error) {
+            console.log('No active session');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const login = async (email: string, password: string) => {
-    try {
-      const { accessToken } = await api.login(email, password);
-      localStorage.setItem('jwt', accessToken);
-      await fetchUser();
-    } catch (error) {
-      localStorage.removeItem('jwt');
-      setUser(null);
-      throw error;
-    }
-  };
+    const login = async (email: string, password: string) => {
+        const response = await api.login(email, password);
+        setUser(response.user);
+    };
 
-  const register = async (name: string, email: string, password: string) => {
-    try {
-      const { accessToken } = await api.register(name, email, password);
-      localStorage.setItem('jwt', accessToken);
-      await fetchUser();
-    } catch (error) {
-      localStorage.removeItem('jwt');
-      setUser(null);
-      throw error;
-    }
-  };
+    const register = async (name: string, email: string, password: string) => {
+        const response = await api.register(name, email, password);
+        setUser(response.user);
+    };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('jwt');
-  };
-  
-  const isAdmin = () => {
-    return user?.role === UserRole.ADMIN;
-  };
+    const logout = async () => {
+        await api.logout();
+        setUser(null);
+    };
 
-  return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, user, loading, login, register, logout, isAdmin }}>
-      {children}
-    </AuthContext.Provider>
-  );
+    return (
+        <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, loading, login, register, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };

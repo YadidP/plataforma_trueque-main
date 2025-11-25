@@ -1,12 +1,12 @@
-
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
 import * as api from '../services/api';
 import { Exchange } from '../types';
+import { useAuth } from '../hooks/useAuth';
 import Spinner from '../components/Spinner';
 
 const ExchangesPage = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +30,7 @@ const ExchangesPage = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-4xl font-bold text-green-dark mb-8">Mis Intercambios</h1>
-      
+
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-green-primary text-white">

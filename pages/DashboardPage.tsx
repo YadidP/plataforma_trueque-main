@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import { Wallet, ImpactMetrics, Exchange, Listing, ListingStatus } from '../types';
 import * as api from '../services/api';
 import Spinner from '../components/Spinner';
 import ImpactMetricsPanel from '../components/ImpactMetricsPanel';
+import { useAuth } from '../hooks/useAuth';
 
 const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [metrics, setMetrics] = useState<ImpactMetrics | null>(null);
   const [recentExchanges, setRecentExchanges] = useState<Exchange[]>([]);
@@ -76,7 +77,7 @@ const DashboardPage = () => {
     // Pequeño delay para evitar race conditions
     const timer = setTimeout(fetchData, 100);
     return () => clearTimeout(timer);
-  }, [user]);
+  }, []);
 
   if (loading) return <Spinner />;
   if (!user) return <p className="text-center text-gray-500 py-8">Usuario no encontrado. Por favor inicia sesión.</p>;
@@ -88,7 +89,7 @@ const DashboardPage = () => {
         <h1 className="text-4xl font-bold text-green-dark mb-2">Hola, {user.name}</h1>
         <p className="text-gray-600">Bienvenido a tu panel de control de EcoTrade</p>
       </div>
-      
+
       {/* KPIs Rápidos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard title="Saldo actual" value={`${wallet?.balance || 0} créditos`} icon="💰" />
@@ -134,8 +135,8 @@ const DashboardPage = () => {
                   <div className="flex-1">
                     <p className="font-semibold text-gray-800">{ex.listingTitle}</p>
                     <p className="text-sm text-gray-500">
-                      {ex.buyerId === user.id 
-                        ? `🛒 Compraste a ${ex.sellerName}` 
+                      {ex.buyerId === user.id
+                        ? `🛒 Compraste a ${ex.sellerName}`
                         : `🎁 Vendiste a ${ex.buyerName}`}
                     </p>
                   </div>

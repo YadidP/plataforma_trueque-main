@@ -1,28 +1,24 @@
 import { Injectable, InternalServerErrorException, ConflictException } from '@nestjs/common';
 import { CreateExchangeDto } from './dto/create-exchange.dto';
-import { DataSource, Repository } from 'typeorm';
-import { Exchange } from 'src/entities';
-import { InjectRepository } from '@nestjs/typeorm';
+import { PgService } from 'src/database/pg.service'; // Import PgService
 
 @Injectable()
 export class ExchangesService {
   constructor(
-    private dataSource: DataSource,
-    @InjectRepository(Exchange)
-    private exchangesRepository: Repository<Exchange>,
+    private readonly pgService: PgService, // Inject PgService
   ) { }
 
   async create(buyerId: number, createExchangeDto: CreateExchangeDto) {
     try {
       // El trigger se encarga de toda la lógica atómica.
       // Aquí solo llamamos al procedimiento que inserta en la tabla `exchanges`.
-      await this.dataSource.query(
+      await this.pgService.query(
         'CALL sp_registrar_intercambio($1, $2, $3)',
         [buyerId, createExchangeDto.listingId, createExchangeDto.quantity],
       );
 
       // NUEVO: Obtener el último intercambio creado con su impacto
-      const lastExchange = await this.dataSource.query(`
+      const lastExchangeResult = await this.pgService.query(`
         SELECT 
           e.id,
           e.credits_total,
@@ -48,9 +44,9 @@ export class ExchangesService {
 
       return {
         message: 'Intercambio registrado con éxito.',
-        exchange: lastExchange[0]
+        exchange: lastExchangeResult.rows[0]
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al ejecutar sp_registrar_intercambio:", error);
       // Capturar errores específicos de la base de datos (RAISE EXCEPTION)
       if (error.message.includes('Saldo insuficiente')) {
@@ -67,32 +63,57 @@ export class ExchangesService {
   }
 
   async findForUser(userId: number) {
-    const exchanges = await this.exchangesRepository.find({
-      where: [
-        { buyerId: userId },
-        { sellerId: userId },
-      ],
-      relations: ['listing', 'buyer', 'seller', 'impacts'], // Add 'impacts' relation
-      order: { exchangeDate: 'DESC' },
-    });
+    const query = `
+      SELECT
+        e.id,
+        e.listing_id as "listingId",
+        l.title as "listingTitle",
+        e.buyer_id as "buyerId",
+        ub.name as "buyerName",
+        e.seller_id as "sellerId",
+        us.name as "sellerName",
+        e.quantity,
+        e.credits_total as "creditsTotal",
+        e.exchange_date as "exchangeDate",
+        COALESCE(
+            json_agg(
+                json_build_object(
+                    'code', ei.metric_code,
+                    'name', ei.metric_name,
+                    'unit', ei.metric_unit,
+                    'value', ei.impact_value
+                )
+            ) FILTER (WHERE ei.id IS NOT NULL),
+            '[]'
+        ) as impacts
+      FROM exchanges e
+      JOIN listings l ON e.listing_id = l.id
+      JOIN users ub ON e.buyer_id = ub.id
+      JOIN users us ON e.seller_id = us.id
+      LEFT JOIN exchange_impacts ei ON e.id = ei.exchange_id
+      WHERE e.buyer_id = $1 OR e.seller_id = $1
+      GROUP BY e.id, l.title, ub.name, us.name
+      ORDER BY e.exchange_date DESC;
+    `;
+    const result = await this.pgService.query(query, [userId]);
 
     // Mapeamos el resultado para que coincida con la interfaz `Exchange` del frontend
-    return exchanges.map(ex => ({
+    return result.rows.map(ex => ({
       id: ex.id,
       listingId: ex.listingId,
-      listingTitle: ex.listing.title,
+      listingTitle: ex.listingTitle,
       buyerId: ex.buyerId,
-      buyerName: ex.buyer.name,
+      buyerName: ex.buyerName,
       sellerId: ex.sellerId,
-      sellerName: ex.seller.name,
+      sellerName: ex.sellerName,
       quantity: ex.quantity,
       totalCredits: Number(ex.creditsTotal),
       date: ex.exchangeDate.toISOString(),
-      impacts: ex.impacts.map(impact => ({ // Include impacts
-        code: impact.metricCode,
-        name: impact.metricName,
-        value: Number(impact.impactValue),
-        unit: impact.metricUnit,
+      impacts: ex.impacts.map((impact: any) => ({ 
+        code: impact.code,
+        name: impact.name,
+        value: Number(impact.value),
+        unit: impact.unit,
       })),
     }));
   }

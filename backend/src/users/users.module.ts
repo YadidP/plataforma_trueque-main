@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/entities';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])],
+  imports: [DatabaseModule], // Use DatabaseModule to provide PgService
   controllers: [UsersController],
   providers: [UsersService],
-  exports: [UsersService], // Exportamos para que AuthModule pueda usarlo
+  exports: [UsersService],
 })
 export class UsersModule {}
+

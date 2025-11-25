@@ -2,7 +2,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
-import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { WalletModule } from './wallet/wallet.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -18,6 +17,7 @@ import { SubcategoriesModule } from './subcategories/subcategories.module';
 import { ImpactModule } from './impact/impact.module';
 import { MaterialsModule } from './materials/materials.module';
 import { ClaimsModule } from './claims/claims.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [

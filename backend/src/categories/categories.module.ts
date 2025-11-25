@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CategoriesController } from './categories.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Category } from 'src/entities';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Category])],
+  imports: [DatabaseModule], // Use DatabaseModule to provide PgService
   controllers: [CategoriesController],
   providers: [CategoriesService],
 })
 export class CategoriesModule {}
+

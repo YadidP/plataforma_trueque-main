@@ -1,21 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Listing } from '../entities/listing.entity';
-import { Exchange } from '../entities/exchange.entity';
+import { PgService } from 'src/database/pg.service'; // Import PgService
 
 @Injectable()
 export class AdminService {
     constructor(
-        @InjectRepository(Listing)
-        private listingsRepository: Repository<Listing>,
-        @InjectRepository(Exchange)
-        private exchangesRepository: Repository<Exchange>,
+        private readonly pgService: PgService, // Inject PgService
     ) { }
 
     async getPublicationsCount(): Promise<{ total: number }> {
-        const count = await this.listingsRepository.count();
-        return { total: count };
+        const result = await this.pgService.query('SELECT COUNT(*) as total FROM listings;');
+        return { total: parseInt(result.rows[0].total, 10) };
     }
 
     async getPublicationsVsExchanges(startDate?: string, endDate?: string): Promise<any[]> {
@@ -48,12 +42,12 @@ export class AdminService {
             ORDER BY m.month ASC
         `;
 
-        const result = await this.listingsRepository.query(query, [
+        const result = await this.pgService.query(query, [
             start.toISOString().split('T')[0],
             end.toISOString().split('T')[0]
         ]);
 
-        return result.map(row => ({
+        return result.rows.map(row => ({
             monthLabel: row.month_label,
             listingsCount: parseInt(row.listings_count, 10),
             exchangesCount: parseInt(row.exchanges_count, 10),

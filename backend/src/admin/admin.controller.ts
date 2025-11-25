@@ -1,15 +1,8 @@
-import { Controller, Get, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
-import { UserRole } from 'src/common/enums';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('admin')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) { }
@@ -19,7 +12,7 @@ export class AdminController {
   @Get('admin-only')
   @ApiOperation({ summary: 'Test admin access' })
   getAdminData() {
-    return "Acceso permitido solo a admin";
+    return "Acceso permitido solo a admin (ahora público para simplificación)";
   }
 
   @Get('stats/publications')

@@ -8,29 +8,11 @@ const http = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 15000,
+  withCredentials: true, // Permite enviar/recibir cookies para sesiones
 });
 
-// Interceptor para añadir token JWT
-http.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('jwt');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Interceptores de JWT eliminados para simplificación.
+// Ahora usamos sesiones basadas en cookies.
 
-// Interceptor para errores
-http.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('jwt');
-    }
-    return Promise.reject(error);
-  }
-);
 
 export default http;

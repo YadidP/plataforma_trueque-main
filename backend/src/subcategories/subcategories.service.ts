@@ -1,29 +1,40 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Subcategory } from 'src/entities/subcategory.entity';
-import { Repository } from 'typeorm';
+import { PgService } from 'src/database/pg.service'; // Import PgService
 
 @Injectable()
 export class SubcategoriesService {
   constructor(
-    @InjectRepository(Subcategory)
-    private subcategoriesRepository: Repository<Subcategory>,
+    private readonly pgService: PgService, // Inject PgService
   ) {}
 
-  async findByCategoryId(categoryId: number): Promise<Subcategory[]> {
-    return this.subcategoriesRepository.find({
-      where: { category: { id: categoryId } },
-    });
+  async findByCategoryId(categoryId: number): Promise<any[]> { // Change return type
+    const query = `
+      SELECT id, category_id as "categoryId", name
+      FROM subcategories
+      WHERE category_id = $1;
+    `;
+    const result = await this.pgService.query(query, [categoryId]);
+    return result.rows;
   }
 
-  async findMaterialsBySubcategoryId(id: number) {
-    const subcategory = await this.subcategoriesRepository.findOne({
-      where: { id },
-      relations: ['materials'],
-    });
-    if (!subcategory) {
-      throw new NotFoundException(`Subcategoría con ID ${id} no encontrada.`);
+  async findMaterialsBySubcategoryId(id: number): Promise<any[]> { // Change return type
+    const query = `
+      SELECT
+        m.id,
+        m.name
+      FROM materials m
+      JOIN subcategory_materials sm ON m.id = sm.material_id
+      WHERE sm.subcategory_id = $1;
+    `;
+    const result = await this.pgService.query(query, [id]);
+    
+    if (result.rows.length === 0) {
+      // Check if subcategory exists at all before throwing NotFoundException
+      const subcategoryExists = await this.pgService.query('SELECT 1 FROM subcategories WHERE id = $1;', [id]);
+      if (subcategoryExists.rows.length === 0) {
+        throw new NotFoundException(`Subcategoría con ID ${id} no encontrada.`);
+      }
     }
-    return subcategory.materials;
+    return result.rows;
   }
 }

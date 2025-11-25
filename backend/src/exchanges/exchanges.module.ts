@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ExchangesService } from './exchanges.service';
 import { ExchangesController } from './exchanges.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Exchange, Listing, User, ExchangeImpact } from 'src/entities';
+import { DatabaseModule } from 'src/database/database.module'; // Import DatabaseModule
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Exchange, Listing, User, ExchangeImpact])],
-
+  imports: [DatabaseModule], // Use DatabaseModule to provide PgService
   controllers: [ExchangesController],
   providers: [ExchangesService],
 })

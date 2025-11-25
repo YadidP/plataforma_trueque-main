@@ -1,23 +1,24 @@
-import { Controller, Post, Body, UseGuards, Req, Get } from '@nestjs/common';
+import { Controller, Post, Body, Req, Get, UseGuards } from '@nestjs/common';
 import { ExchangesService } from './exchanges.service';
 import { CreateExchangeDto } from './dto/create-exchange.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
 
 @ApiTags('exchanges')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('exchanges')
+@UseGuards(AuthenticatedGuard)
 export class ExchangesController {
   constructor(private readonly exchangesService: ExchangesService) {}
 
   @Post()
   create(@Body() createExchangeDto: CreateExchangeDto, @Req() req) {
-    return this.exchangesService.create(req.user.id, createExchangeDto);
+    const userId = req.session.user.id;
+    return this.exchangesService.create(userId, createExchangeDto);
   }
 
   @Get()
   findUserExchanges(@Req() req) {
-    return this.exchangesService.findForUser(req.user.id);
+    const userId = req.session.user.id;
+    return this.exchangesService.findForUser(userId);
   }
 }
