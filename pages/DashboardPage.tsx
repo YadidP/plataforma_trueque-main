@@ -92,7 +92,14 @@ const DashboardPage = () => {
 
         {/* Última Actividad */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">🔄 Actividad Reciente</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-800">🔄 Actividad Reciente</h2>
+            
+            {/* BOTÓN DE ACCESO DIRECTO */}
+            <Link to="/exchanges" className="flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-bold bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
+              Ver historial completo →
+            </Link>
+          </div>
           {recentExchanges.length > 0 ? (
             <ul className="space-y-3">
               {recentExchanges.map(ex => {

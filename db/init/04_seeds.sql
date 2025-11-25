@@ -202,3 +202,21 @@ INSERT INTO listings (author_id, title, description, category_id, subcategory_id
  (SELECT id FROM materials WHERE name='Papel'), 
  1, -- 1 unidad
  30, 'unidades', '/uploads/libro_algebra.jpg', 'activa');
+
+-- PLANES DE SUSCRIPCIÓN (Solo Premium, precios en Bs)
+DELETE FROM subscriptions; -- Limpiar anteriores para evitar duplicados lógicos
+INSERT INTO subscriptions (name, price_bs, duration_days, description) VALUES
+('Plan Eco-Pro', 80.00, 30, 'Destaca tus publicaciones al inicio. Soporte prioritario.'),
+('Plan Eco-Leader', 150.00, 30, 'Máxima visibilidad. Insignia de Líder Verde. Acceso anticipado a eventos.')
+ON CONFLICT (name) DO NOTHING;
+
+-- Asignar suscripción gratuita a usuarios existentes si no tienen
+-- Asumimos que el "Gratuito" es un plan interno con ID 1, si no existe, lo crea
+INSERT INTO subscriptions (name, price_bs, duration_days, description) VALUES
+('Gratuito', 0, 3650, 'Plan básico para todos los usuarios.')
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO user_subscriptions (user_id, subscription_id, start_date, end_date, is_active)
+SELECT u.id, s.id, NOW(), NOW() + INTERVAL '10 years', TRUE
+FROM users u, subscriptions s
+WHERE s.name='Gratuito' AND u.id NOT IN (SELECT user_id FROM user_subscriptions WHERE is_active = true AND end_date > NOW());

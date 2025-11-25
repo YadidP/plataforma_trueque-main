@@ -59,20 +59,23 @@ const ListingDetailPage = () => {
 
   const handleExchange = async () => {
     if (!listing || !user || !wallet) return;
+
     const totalCost = listing.unitCredits * quantity;
 
+    // VALIDACIÓN DE SALDO CON REDIRECCIÓN
     if (Number(wallet.balance) < totalCost) {
-      addNotification('Saldo insuficiente.', 'error');
+      addNotification('Saldo insuficiente. Redirigiendo a tu billetera...', 'error');
+      setTimeout(() => navigate('/wallet'), 2000); // Espera 2s y redirige
       return;
     }
 
     setExchangeLoading(true);
     try {
       await api.createExchange(listing.id, quantity);
-      addNotification('¡Intercambio realizado con éxito! Impacto registrado.', 'success');
-      navigate('/exchanges');
-    } catch (error) {
-      addNotification(`Error: ${error}`, 'error');
+      addNotification('¡Intercambio exitoso! Revisa tus movimientos.', 'success');
+      navigate('/exchanges'); // REDIRECCIÓN A MIS INTERCAMBIOS
+    } catch (error: any) {
+      addNotification(error.response?.data?.message || 'Error al procesar', 'error');
     } finally {
       setExchangeLoading(false);
       setIsConfirming(false);
@@ -317,13 +320,24 @@ const ListingDetailPage = () => {
                 <button onClick={() => setIsConfirming(false)} className="flex-1 py-3 border border-gray-300 rounded-xl text-gray-600 font-semibold hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button 
-                  onClick={handleExchange} 
-                  disabled={exchangeLoading || ((wallet?.balance || 0) < (listing.unitCredits * quantity))}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md disabled:bg-gray-300 disabled:shadow-none"
-                >
-                  {exchangeLoading ? 'Procesando...' : 'Confirmar Canje'}
-                </button>
+                
+                {/* Lógica condicional del botón */}
+                {(wallet?.balance || 0) < (listing.unitCredits * quantity) ? (
+                    <button 
+                        onClick={() => navigate('/wallet')}
+                        className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 shadow-md"
+                    >
+                        Recargar Billetera
+                    </button>
+                ) : (
+                    <button 
+                        onClick={handleExchange} 
+                        disabled={exchangeLoading}
+                        className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md disabled:bg-gray-300"
+                    >
+                        {exchangeLoading ? 'Procesando...' : 'Confirmar Canje'}
+                    </button>
+                )}
               </div>
             </div>
           </div>

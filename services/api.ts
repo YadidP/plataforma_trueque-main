@@ -1,5 +1,5 @@
 import http from './http';
-import type { Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport, ClaimsReport, AdvancedReport } from '../types';
+import type { Wallet, CreditMovement, CreditPackage, Listing, Category, Material, Subcategory, ImpactMetricResult, ImpactMetrics, Exchange, UserReport, MonetizationReport, ImpactReport, ClaimsReport, AdvancedReport, SubscriptionPlan } from '../types';
 
 // Helper to ensure full /uploads/ path and fallback
 const getImageUrl = (path: string | undefined): string => {
@@ -48,6 +48,15 @@ export const getCreditPackages = async (): Promise<CreditPackage[]> => {
 
 export const purchaseCredits = async (packageId: number, paymentRef: string): Promise<void> => {
   await http.post('/credits/purchase', { creditsPackageId: packageId, paymentRef });
+};
+
+export const getSubscriptionPlans = async (): Promise<SubscriptionPlan[]> => {
+  const response = await http.get('/credits/plans');
+  return response.data;
+};
+
+export const subscribeToPlan = async (planId: number): Promise<void> => {
+  await http.post('/credits/subscribe', { planId });
 };
 
 
@@ -207,5 +216,11 @@ export const getPublicationsCount = async (): Promise<{ total: number }> => {
 
 export const getPublicationsVsExchanges = async (params: DateRangeParams = {}): Promise<any[]> => {
   const response = await http.get('/admin/stats/publications-vs-exchanges', { params });
+  return response.data;
+};
+
+// Agregar al final o donde están las de créditos
+export const getMySubscription = async (): Promise<any> => {
+  const response = await http.get('/credits/my-subscription');
   return response.data;
 };

@@ -73,19 +73,31 @@ export class ListingsService {
         l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
         l.unit_credits as "unitCredits", l.quantity, l.unit_label as "unitLabel",
         l.material_id as "materialId",
+        l.category_id as "categoryId", -- AGREGADO: Faltaba esto para que el filtro funcione
         l.created_at as "createdAt",
-        u.name as author_name, u.id as author_id
+        u.name as author_name, u.id as author_id,
+        -- Detectar si el autor tiene suscripción Premium activa (ID 2 es el ejemplo de Premium)
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 FROM user_subscriptions us 
+                JOIN subscriptions s ON us.subscription_id = s.id
+                WHERE us.user_id = l.author_id 
+                AND s.name LIKE '%Premium%' 
+                AND us.is_active = true 
+                AND us.end_date > NOW()
+            ) THEN 1 
+            ELSE 0 
+        END as is_premium
       FROM listings l
       JOIN users u ON l.author_id = u.id
       WHERE l.status = 'activa'
-      ORDER BY l.created_at DESC;
+      ORDER BY is_premium DESC, l.created_at DESC; -- Primero Premium, luego los más recientes
     `;
+    
     const result = await this.pgService.query(query);
 
     return Promise.all(result.rows.map(async (listing) => {
       let potentialImpact = [];
-      
-      // Solo calculamos si tiene material, cantidad y unidad
       if (listing.materialId && listing.quantity && listing.unitLabel) {
         try {
           potentialImpact = await this.impactService.calculateImpactPreview({
@@ -93,14 +105,11 @@ export class ListingsService {
             quantity: Number(listing.quantity),
             quantity_unit: listing.unitLabel
           });
-        } catch (e) {
-          console.error(`Error calculando impacto para listing ${listing.id}`, e);
-        }
+        } catch (e) {}
       }
-      
       return {
         ...listing,
-        author: { name: listing.author_name, id: listing.author_id },
+        author: { name: listing.author_name, id: listing.author_id, isPremium: listing.is_premium === 1 },
         potentialImpact
       };
     }));

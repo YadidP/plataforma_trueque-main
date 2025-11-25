@@ -142,7 +142,7 @@ CREATE INDEX IF NOT EXISTS idx_exchanges_seller_id ON exchanges(seller_id);
 CREATE TABLE IF NOT EXISTS credit_purchases (
   id BIGSERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id),
-  credits INT NOT NULL CHECK (credits > 0),
+  credits INT NOT NULL CHECK (credits >= 0),
   amount_bs NUMERIC(10,2) NOT NULL CHECK (amount_bs >= 0),
   status VARCHAR(20) NOT NULL DEFAULT 'pagado' CHECK (status IN ('pendiente','pagado','fallido')),
   payment_ref VARCHAR(100),

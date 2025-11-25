@@ -74,8 +74,7 @@ export interface Listing {
   createdAt: string;
   potentialImpact?: ImpactMetricResult[];
   // Propiedades adicionales retornadas por el backend en algunos endpoints
-  author?: { id: number; name: string };
-  category?: { id: number; name: string };
+  author?: { id: number; name: string; isPremium?: boolean }; // Añadir isPremium
 }
 
 export interface Exchange {
@@ -195,4 +194,13 @@ export interface PublicationsVsExchangesData {
   monthLabel: string;
   listingsCount: number;
   exchangesCount: number;
+}
+
+// Añadir
+export interface SubscriptionPlan {
+  id: number;
+  name: string;
+  price_bs: number; // Usaremos esto como costo en créditos para el ejemplo
+  duration_days: number;
+  description: string;
 }
