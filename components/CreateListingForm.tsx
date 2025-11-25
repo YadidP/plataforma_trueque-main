@@ -228,78 +228,101 @@ const CreateListingForm: React.FC = () => {
         {step === 2 && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-green-dark mb-4">Paso 2: Especificaciones</h2>
+            
+            {/* Selector de Material */}
             {showMat && (
-              <SearchableSelect
-                id="mat"
-                label="Material"
-                value={selectedMaterialId}
-                onChange={setSelectedMaterialId}
-                options={materials}
-                required
-                placeholder="Selecciona"
-              />
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Cantidad *</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="Ej: 5"
-                  className="w-full px-3 py-2 border rounded"
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <label className="block text-sm font-medium text-blue-800 mb-2">¿De qué material está hecho principalmente?</label>
+                <SearchableSelect
+                  id="mat"
+                  label=""
+                  value={selectedMaterialId}
+                  onChange={setSelectedMaterialId}
+                  options={materials}
                   required
+                  placeholder="Selecciona el material (ej. Madera, Algodón...)"
                 />
+                <p className="text-xs text-blue-600 mt-2">ℹ️ Esto define el cálculo de huella ecológica.</p>
               </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Campo Cantidad con Unidad integrada */}
               <div>
-                <label className="block text-sm font-medium mb-1">Unidad</label>
-                <input
-                  type="text"
-                  value={unitLabel}
-                  disabled
-                  className="w-full px-3 py-2 bg-gray-100 border rounded"
-                />
+                <label className="block text-sm font-medium mb-1 text-gray-700">Cantidad Disponible</label>
+                <div className="relative mt-1 rounded-md shadow-sm">
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    className="block w-full pr-12 border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 py-2 px-3 border"
+                    placeholder="Ej: 5"
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">
+                      {unitLabel || 'u.'} {/* Muestra kg, litros o unidades aquí */}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Campo Créditos */}
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-700">Valor en Créditos (por unidad)</label>
+                <div className="relative mt-1 rounded-md shadow-sm">
+                  <input
+                    type="number"
+                    min="1"
+                    value={unitCredits}
+                    onChange={(e) => setUnitCredits(e.target.value)}
+                    className="block w-full pr-10 border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 py-2 px-3 border"
+                    placeholder="0"
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-green-600 font-bold sm:text-sm">✦</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Creditos *</label>
-              <input
-                type="number"
-                value={unitCredits}
-                onChange={(e) => setUnitCredits(e.target.value)}
-                className="w-full px-3 py-2 border rounded"
-                required
-              />
-            </div>
-            {impactLoading && <p className="text-green-dark">Calculando impacto...</p>}
+
+            {/* Preview del Impacto (Mejorado) */}
+            {impactLoading && <p className="text-green-600 text-sm animate-pulse">🌱 Calculando impacto ambiental...</p>}
+            
             {impactPreview && impactPreview.length > 0 && (
-              <div className="p-4 bg-green-50 rounded border border-green-200">
-                <p className="text-green-800 font-bold mb-2">🌿 Impacto Ambiental Estimado:</p>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="mt-4 p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">🌍</span>
+                  <h3 className="font-bold text-green-800">Impacto Positivo Estimado</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">Si vendes todo esto, ayudarás al planeta ahorrando:</p>
+                <div className="grid grid-cols-2 gap-3">
                   {impactPreview.map(m => (
-                    <div key={m.code} className="flex items-center text-sm text-green-700">
-                      <span className="font-semibold mr-1">{m.value} {m.unit}</span>
-                      <span>{m.name || m.code}</span>
+                    <div key={m.code} className="bg-white/60 p-2 rounded-lg flex justify-between items-center border border-green-100">
+                      <span className="text-xs font-medium text-gray-600">{m.name}</span>
+                      <span className="text-sm font-bold text-green-700">{m.value} {m.unit}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            <div className="flex gap-4">
+
+            <div className="flex gap-4 mt-6">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="flex-1 border-2 border-green-primary text-green-primary py-2 rounded hover:bg-green-50"
+                className="flex-1 border-2 border-gray-200 text-gray-600 py-2 rounded-lg hover:bg-gray-50 font-medium"
               >
-                Anterior
+                Atrás
               </button>
               <button
                 type="button"
                 onClick={() => validate(2) && setStep(3)}
-                className="flex-1 bg-green-primary text-white py-2 rounded hover:bg-green-dark"
+                className="flex-1 bg-green-primary text-white py-2 rounded-lg hover:bg-green-dark font-medium shadow-md hover:shadow-lg transition-all"
               >
-                Siguiente
+                Continuar a Imágenes
               </button>
             </div>
           </div>
