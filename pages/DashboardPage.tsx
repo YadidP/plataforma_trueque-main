@@ -7,7 +7,7 @@ import ImpactMetricsPanel from '../components/ImpactMetricsPanel';
 import { useAuth } from '../hooks/useAuth';
 
 const DashboardPage = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [metrics, setMetrics] = useState<ImpactMetrics | null>(null);
@@ -79,7 +79,7 @@ const DashboardPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  if (loading) return <Spinner />;
+  if (loading || authLoading) return <Spinner />;
   if (!user) return <p className="text-center text-gray-500 py-8">Usuario no encontrado. Por favor inicia sesión.</p>;
   if (error) return <div className="text-center text-red-600 py-8">{error}</div>;
 

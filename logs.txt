@@ -1,0 +1,197 @@
+
+> trueque-backend@0.0.1 start:dev
+> nest start --watch
+
+[2J[3J[H[[90m6:52:01 PM[0m] Starting compilation in watch mode...
+
+[[90m6:52:04 PM[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +14ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDatabaseModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFilesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mServeStaticModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +33ms[39m
+query: SELECT version()
+query: SELECT * FROM current_schema()
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmCoreModule dependencies initialized[39m[38;5;3m +32ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +2ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCategoriesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mImpactModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mSubcategoriesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMaterialsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCreditsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mReportsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mWalletModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mExchangesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAdminModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mClaimsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mListingsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth}:[39m[38;5;3m +24ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/register, POST} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/me, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/api/users}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mWalletController {/api/wallet}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/wallet/saldo, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/wallet/movimientos, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mCategoriesController {/api/categories}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/categories, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/categories/:id, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mListingsController {/api/listings}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings/my-listings, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mImpactController {/api/impact}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/impact/preview, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mExchangesController {/api/exchanges}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/exchanges, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/exchanges, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mCreditsController {/api/credits}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/credits/packages, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/credits/purchase, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mReportsController {/api/reports}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/my-impact, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/users, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/monetization, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/impact, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/claims, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/advanced, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAdminController {/api/admin}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/admin-only, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/stats/publications, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/stats/publications-vs-exchanges, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mSubcategoriesController {/api/subcategories}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/subcategories/by-category/:categoryId, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/subcategories/:id/materials, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mMaterialsController {/api/materials}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/materials, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mClaimsController {/api/claims}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/claims, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/claims, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/claims/active, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/claims/:id/resolve, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:52:05 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +3ms[39m
+Application is running on: http://[::1]:3000
+query: SELECT "User"."id" AS "User_id", "User"."name" AS "User_name", "User"."email" AS "User_email", "User"."password_hash" AS "User_password_hash", "User"."role" AS "User_role", "User"."created_at" AS "User_created_at" FROM "users" "User" WHERE (("User"."email" = $1)) LIMIT 1 -- PARAMETERS: ["uno@test.com"]
+query: SELECT "User"."id" AS "User_id", "User"."name" AS "User_name", "User"."email" AS "User_email", "User"."password_hash" AS "User_password_hash", "User"."role" AS "User_role", "User"."created_at" AS "User_created_at" FROM "users" "User" WHERE (("User"."email" = $1)) LIMIT 1 -- PARAMETERS: ["uno@test.com"]
+query: SELECT "User"."id" AS "User_id", "User"."name" AS "User_name", "User"."email" AS "User_email", "User"."password_hash" AS "User_password_hash", "User"."role" AS "User_role", "User"."created_at" AS "User_created_at" FROM "users" "User" WHERE (("User"."email" = $1)) LIMIT 1 -- PARAMETERS: ["uno@test.com"]
+query: START TRANSACTION
+query: INSERT INTO "users"("name", "email", "password_hash", "role", "created_at") VALUES ($1, $2, $3, DEFAULT, DEFAULT) RETURNING "id", "role", "created_at" -- PARAMETERS: ["Usuario Uno","uno@test.com","$2b$10$E2mtMuM5wUv3iu02HDEL7.naLY6np/HQzEcqSrg/Aj8l.STGu77l6"]
+query: COMMIT
+query: SELECT "User"."id" AS "User_id", "User"."name" AS "User_name", "User"."email" AS "User_email", "User"."password_hash" AS "User_password_hash", "User"."role" AS "User_role", "User"."created_at" AS "User_created_at" FROM "users" "User" WHERE (("User"."email" = $1)) LIMIT 1 -- PARAMETERS: ["uno@test.com"]
+query: SELECT "User"."id" AS "User_id", "User"."name" AS "User_name", "User"."email" AS "User_email", "User"."password_hash" AS "User_password_hash", "User"."role" AS "User_role", "User"."created_at" AS "User_created_at" FROM "users" "User" WHERE (("User"."email" = $1)) LIMIT 1 -- PARAMETERS: ["uno@test.com"]
+
+> trueque-backend@0.0.1 start:dev
+> nest start --watch
+
+[2J[3J[H[[90m6:58:44 PM[0m] Starting compilation in watch mode...
+
+[[90m6:58:46 PM[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +12ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDatabaseModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFilesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mServeStaticModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +36ms[39m
+query: SELECT version()
+query: SELECT * FROM current_schema()
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmCoreModule dependencies initialized[39m[38;5;3m +28ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCategoriesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mImpactModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mSubcategoriesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMaterialsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCreditsModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mReportsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mWalletModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mExchangesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAdminModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mClaimsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mListingsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth}:[39m[38;5;3m +21ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/register, POST} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/me, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/api/users}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mWalletController {/api/wallet}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/wallet/saldo, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/wallet/movimientos, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mCategoriesController {/api/categories}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/categories, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/categories/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mListingsController {/api/listings}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings/my-listings, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/listings/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mImpactController {/api/impact}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/impact/preview, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mExchangesController {/api/exchanges}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/exchanges, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/exchanges, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mCreditsController {/api/credits}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/credits/packages, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/credits/purchase, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mReportsController {/api/reports}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/my-impact, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/users, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/monetization, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/impact, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/claims, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/admin/advanced, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAdminController {/api/admin}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/admin-only, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/stats/publications, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/stats/publications-vs-exchanges, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mSubcategoriesController {/api/subcategories}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/subcategories/by-category/:categoryId, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/subcategories/:id/materials, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mMaterialsController {/api/materials}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/materials, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mClaimsController {/api/claims}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/claims, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/claims, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/claims/active, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/claims/:id/resolve, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 31  - [39m11/25/2025, 6:58:47 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +3ms[39m
+Application is running on: http://[::1]:3000
+query: SELECT "User"."id" AS "User_id", "User"."name" AS "User_name", "User"."email" AS "User_email", "User"."password_hash" AS "User_password_hash", "User"."role" AS "User_role", "User"."created_at" AS "User_created_at" FROM "users" "User" WHERE (("User"."email" = $1)) LIMIT 1 -- PARAMETERS: ["uno@test.com"]

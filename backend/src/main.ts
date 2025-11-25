@@ -23,13 +23,14 @@ async function bootstrap() {
   app.use(
     session({
       secret: configService.get('SESSION_SECRET') || 'super-secret-key-change-in-production',
+      name: 'sessionId', // Nombre de la cookie
       resave: false,
       saveUninitialized: false,
       cookie: {
         maxAge: 24 * 60 * 60 * 1000, // 24 horas
-        httpOnly: true,
+        httpOnly: false, // Cambiar a false para debugging
         sameSite: 'lax',
-        secure: false, // true en producción con HTTPS
+        secure: false,
       },
     }),
   );

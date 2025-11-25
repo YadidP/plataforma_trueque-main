@@ -11,25 +11,41 @@ export class AuthController {
     constructor(private readonly authService: AuthService) { }
 
     @Post('register')
-    async register(@Body() createUserDto: CreateUserDto, @Req() req: Request) {
+    async register(@Body() createUserDto: CreateUserDto, @Req() req: Request, @Res() res: Response) {
         const user = await this.authService.register(createUserDto);
 
         // Guardar usuario en sesión
         req.session.userId = user.id;
         req.session.user = user;
 
-        return { message: 'Registration successful', user };
+        // Forzar guardado de sesión antes de responder
+        req.session.save((err) => {
+            if (err) {
+                console.error('Error saving session:', err);
+                return res.status(500).json({ message: 'Error creating session' });
+            }
+            console.log('Session saved for user:', user.id);
+            return res.json({ message: 'Registration successful', user });
+        });
     }
 
     @Post('login')
-    async login(@Body() loginDto: LoginDto, @Req() req: Request) {
+    async login(@Body() loginDto: LoginDto, @Req() req: Request, @Res() res: Response) {
         const user = await this.authService.login(loginDto.email, loginDto.password);
 
         // Guardar usuario en sesión
         req.session.userId = user.id;
         req.session.user = user;
 
-        return { message: 'Login successful', user };
+        // Forzar guardado de sesión antes de responder
+        req.session.save((err) => {
+            if (err) {
+                console.error('Error saving session:', err);
+                return res.status(500).json({ message: 'Error creating session' });
+            }
+            console.log('Session saved for user:', user.id);
+            return res.json({ message: 'Login successful', user });
+        });
     }
 
     @Post('logout')
@@ -45,6 +61,7 @@ export class AuthController {
 
     @Get('me')
     async getMe(@Req() req: Request) {
+        console.log('Session in me:', req.session);
         if (!req.session.userId) {
             return { user: null };
         }
