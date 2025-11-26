@@ -115,12 +115,60 @@ export class AdminService {
         };
     }
 
-    // MÓDULO 4: IMPACTO AMBIENTAL
-    async getImpactData(startDate: string, endDate: string) {
-        const [totalsRes, catRes] = await Promise.all([
-            this.pgService.query('SELECT * FROM fn_chart_impact_totals($1, $2)', [startDate, endDate]),
-            this.pgService.query('SELECT * FROM fn_chart_impact_by_category($1, $2)', [startDate, endDate])
-        ]);
+    // --- MÓDULO 4: IMPACTO AMBIENTAL (MODIFICADO) ---
+    async getImpactData(startDate: string, endDate: string, metric: string) {
+        // 1. Totales Generales (Igual que antes)
+        const totalsRes = await this.pgService.query('SELECT * FROM fn_chart_impact_totals($1, $2)', [startDate, endDate]);
+
+        let catQuery = '';
+        let params: any[] = [];
+
+        if (metric === 'COUNT') {
+            // Lógica para contar Publicaciones vs Intercambios por categoría
+            catQuery = `
+                WITH cat_base AS (SELECT id, name FROM categories)
+                SELECT 
+                    c.name as category_name,
+                    (SELECT COUNT(*) FROM listings l WHERE l.category_id = c.id AND l.created_at::date BETWEEN $1 AND $2) as potential_val,
+                    (SELECT COUNT(*) FROM exchanges e JOIN listings l ON e.listing_id = l.id WHERE l.category_id = c.id AND e.exchange_date::date BETWEEN $1 AND $2) as real_val
+                FROM cat_base c
+                ORDER BY real_val DESC;
+            `;
+            params = [startDate, endDate];
+        } else {
+            // Lógica dinámica para métricas ambientales (CO2, AGUA, ETC)
+            catQuery = `
+               WITH categories_base AS (SELECT id, name FROM categories),
+                real_impact AS (
+                    SELECT l.category_id, SUM(ei.impact_value) as real_val
+                    FROM exchange_impacts ei
+                    JOIN exchanges e ON ei.exchange_id = e.id
+                    JOIN listings l ON e.listing_id = l.id
+                    WHERE ei.metric_code = $3 AND e.exchange_date::date BETWEEN $1 AND $2
+                    GROUP BY l.category_id
+                ),
+                potential_impact AS (
+                    SELECT l.category_id, SUM( (l.quantity / ie.base_quantity) * ie.impact_value ) as pot_val
+                    FROM listings l
+                    JOIN impact_equivalences ie ON l.material_id = ie.material_id AND ie.base_unit = l.unit_label
+                    JOIN impact_metrics im ON ie.metric_id = im.id
+                    WHERE im.code = $3 AND l.created_at::date BETWEEN $1 AND $2
+                    GROUP BY l.category_id
+                )
+                SELECT 
+                    c.name as category_name,
+                    COALESCE(pi.pot_val, 0) as potential_val,
+                    COALESCE(ri.real_val, 0) as real_val
+                FROM categories_base c
+                LEFT JOIN potential_impact pi ON c.id = pi.category_id
+                LEFT JOIN real_impact ri ON c.id = ri.category_id
+                WHERE COALESCE(pi.pot_val, 0) > 0 OR COALESCE(ri.real_val, 0) > 0
+                ORDER BY pi.pot_val DESC;
+            `;
+            params = [startDate, endDate, metric];
+        }
+
+        const catRes = await this.pgService.query(catQuery, params);
 
         return {
             totals: totalsRes.rows.map(r => ({
@@ -129,8 +177,8 @@ export class AdminService {
             })),
             byCategory: catRes.rows.map(r => ({
                 category_name: r.category_name,
-                potential_co2: Number(r.potential_co2),
-                real_co2: Number(r.real_co2)
+                potential_val: Number(r.potential_val), // Renombramos a _val genérico
+                real_val: Number(r.real_val)
             }))
         };
     }

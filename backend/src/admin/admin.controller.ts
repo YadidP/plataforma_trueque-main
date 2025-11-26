@@ -60,9 +60,11 @@ export class AdminController {
   getImpactData(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
+    @Query('metric') metric: string, // <--- NUEVO PARÁMETRO
   ) {
     const end = endDate || new Date().toISOString().split('T')[0];
     const start = startDate || new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0];
-    return this.adminService.getImpactData(start, end);
+    // Por defecto usamos CO2 si no envían nada
+    return this.adminService.getImpactData(start, end, metric || 'CO2');
   }
 }

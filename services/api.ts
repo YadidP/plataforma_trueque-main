@@ -195,8 +195,8 @@ export const getAdminEconomyData = async (startDate: string, endDate: string) =>
   return response.data;
 };
 
-export const getAdminImpactData = async (startDate: string, endDate: string) => {
-  const response = await http.get('/admin/charts/impact', { params: { startDate, endDate } });
+export const getAdminImpactData = async (startDate: string, endDate: string, metric: string = 'CO2') => {
+  const response = await http.get('/admin/charts/impact', { params: { startDate, endDate, metric } });
   return response.data;
 };
 

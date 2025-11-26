@@ -23,11 +23,12 @@ const AdminPage = () => {
     const [kpiData, setKpiData] = useState<any>(null);
     const [dynamicsData, setDynamicsData] = useState<any>(null);
     const [economyData, setEconomyData] = useState<any>(null);
-    const [impactData, setImpactData] = useState<any>(null); // NUEVO ESTADO
+    const [impactData, setImpactData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     // Filtros extra
     const [roleFilter, setRoleFilter] = useState('ALL');
+    const [impactMetric, setImpactMetric] = useState('CO2');
 
     // 3. Estado del Modal de Detalles
     const [modalOpen, setModalOpen] = useState(false);
@@ -43,7 +44,7 @@ const AdminPage = () => {
                 api.getAdminKpiSummary(dateRange.startDate, dateRange.endDate),
                 api.getAdminUserDynamics(dateRange.startDate, dateRange.endDate, roleFilter),
                 api.getAdminEconomyData(dateRange.startDate, dateRange.endDate),
-                api.getAdminImpactData(dateRange.startDate, dateRange.endDate) // NUEVO
+                api.getAdminImpactData(dateRange.startDate, dateRange.endDate, impactMetric)
             ]);
             setKpiData(kpi);
             setDynamicsData(dyn);
@@ -60,7 +61,8 @@ const AdminPage = () => {
         }
     };
 
-    useEffect(() => { fetchAllData(); }, [dateRange.startDate, dateRange.endDate, roleFilter]);
+    // Recargar data cuando cambien los filtros
+    useEffect(() => { fetchAllData(); }, [dateRange.startDate, dateRange.endDate, roleFilter, impactMetric]);
 
     // Manejar apertura de listas detalladas
     const openListModal = async (type: 'users' | 'finance' | 'listings' | 'exchanges') => {
@@ -95,8 +97,22 @@ const AdminPage = () => {
         pdf.save(`reporte_admin_${dateRange.endDate}.pdf`);
     };
 
-    // Colores
+    // Colores para gráficos
     const PIE_COLORS = ['#4ade80', '#3b82f6', '#9ca3af'];
+    const ORIGIN_COLORS = ['#ef4444', '#22c55e']; // Rojo (Compra) y Verde (Intercambio)
+
+    // Helper para etiquetas del gráfico de impacto
+    const getMetricLabel = (code: string) => {
+        const map: any = {
+            'COUNT': 'Cantidad (u.)',
+            'CO2': 'CO2 (kg)',
+            'WATER': 'Agua (L)',
+            'ENERGY': 'Energía (kWh)',
+            'WASTE': 'Residuos (kg)',
+            'TREES': 'Árboles (u.)'
+        };
+        return map[code] || code;
+    };
 
     if (loading) return <Spinner />;
 
@@ -311,26 +327,30 @@ const AdminPage = () => {
                             </div>
                         </div>
 
-                        {/* Origen Créditos */}
+                        {/* Origen Créditos - CORREGIDO: AHORA ES UN PIE CHART */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <h3 className="font-bold text-gray-700 mb-4 text-center">Origen del Capital</h3>
                             <div className="h-72">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={economyData?.creditOrigin || []}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="source_type" hide />
-                                        <YAxis />
-                                        <Tooltip cursor={{ fill: 'transparent' }} />
-                                        <Legend />
-                                        <Bar dataKey="total_credits" name="Créditos" fill="#ffd700">
+                                    <PieChart>
+                                        <Pie
+                                            data={economyData?.creditOrigin || []}
+                                            cx="50%" cy="50%"
+                                            outerRadius={80}
+                                            dataKey="total_credits"
+                                            nameKey="source_type"
+                                            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                                        >
                                             {(economyData?.creditOrigin || []).map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={index === 0 ? '#ef4444' : '#22c55e'} />
+                                                <Cell key={`cell-${index}`} fill={ORIGIN_COLORS[index % ORIGIN_COLORS.length]} />
                                             ))}
-                                        </Bar>
-                                    </BarChart>
+                                        </Pie>
+                                        <Tooltip />
+                                        <Legend verticalAlign="bottom" height={36} />
+                                    </PieChart>
                                 </ResponsiveContainer>
                             </div>
-                            <p className="text-xs text-center text-gray-400 mt-2">Rojo: Compra Directa | Verde: Circulación Interna</p>
+                            <p className="text-xs text-center text-gray-400 mt-2">Distribución de créditos en el sistema</p>
                         </div>
 
                         {/* Ranking Usuarios */}
@@ -373,6 +393,20 @@ const AdminPage = () => {
                             <span className="bg-green-100 text-green-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">4</span>
                             Impacto Ambiental Detallado
                         </h2>
+
+                        {/* FILTRO DE MÉTRICAS FUNCIONAL */}
+                        <select
+                            value={impactMetric}
+                            onChange={(e) => setImpactMetric(e.target.value)}
+                            className="border-gray-300 rounded-lg text-sm p-2 bg-white shadow-sm focus:ring-green-500 focus:border-green-500 font-bold text-gray-700"
+                        >
+                            <option value="COUNT">📊 Cantidad (Publicado vs Intercambiado)</option>
+                            <option value="CO2">☁️ Huella de Carbono (CO2)</option>
+                            <option value="WATER">💧 Ahorro de Agua</option>
+                            <option value="ENERGY">⚡ Ahorro de Energía</option>
+                            <option value="WASTE">♻️ Residuos Evitados</option>
+                            <option value="TREES">🌳 Árboles Equivalentes</option>
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -386,13 +420,13 @@ const AdminPage = () => {
                                         <BarChart data={impactData.totals} layout="vertical" margin={{ left: 40, right: 20 }}>
                                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                             <XAxis type="number" />
-                                            <YAxis 
-                                                type="category" 
-                                                dataKey="metric_name" 
-                                                width={110} 
-                                                tick={{fontSize: 11, fill: '#6b7280'}} 
+                                            <YAxis
+                                                type="category"
+                                                dataKey="metric_name"
+                                                width={110}
+                                                tick={{ fontSize: 11, fill: '#6b7280' }}
                                             />
-                                            <Tooltip 
+                                            <Tooltip
                                                 formatter={(value: number, name: string, props: any) => [`${value} ${props.payload.metric_unit}`, 'Ahorrado']}
                                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                                             />
@@ -414,34 +448,37 @@ const AdminPage = () => {
                             </div>
                         </div>
 
-                        {/* Gráfico 2: Comparativa por Categoría */}
-                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 className="font-bold text-gray-700 mb-4 text-center">Huella de Carbono (CO2): Potencial vs Real</h3>
+                        {/* Gráfico 2: Comparativa Dinámica (Corregido para usar impactMetric) */}
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <h3 className="font-bold text-gray-700 mb-4 text-center">
+                                Comparativa: {impactMetric === 'COUNT' ? 'Oferta vs Ventas' : 'Potencial vs Real'}
+                            </h3>
                             <div className="h-80 w-full">
                                 {impactData?.byCategory && impactData.byCategory.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={impactData.byCategory} margin={{ top: 20 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis dataKey="category_name" tick={{fontSize: 11}} />
-                                            <YAxis label={{ value: 'kg CO2', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }} />
+                                            <XAxis dataKey="category_name" tick={{ fontSize: 11 }} />
+                                            <YAxis label={{ value: getMetricLabel(impactMetric), angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }} />
                                             <Tooltip contentStyle={{ borderRadius: '12px' }} />
-                                            <Legend verticalAlign="top" height={36} iconType="circle"/>
-                                            <Bar dataKey="potential_co2" name="Potencial (Publicado)" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
-                                            <Bar dataKey="real_co2" name="Real (Vendido)" fill="#16a34a" radius={[4, 4, 0, 0]} barSize={20} />
+                                            <Legend verticalAlign="top" height={36} iconType="circle" />
+                                            <Bar dataKey="potential_val" name={impactMetric === 'COUNT' ? "Publicados" : "Potencial"} fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
+                                            <Bar dataKey="real_val" name={impactMetric === 'COUNT' ? "Intercambiados" : "Real"} fill="#16a34a" radius={[4, 4, 0, 0]} barSize={20} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 ) : (
                                     <div className="h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                                         <span className="text-3xl mb-2">🌱</span>
-                                        <p>Sin actividad de CO2 registrada.</p>
+                                        <p>Sin datos para la métrica seleccionada.</p>
                                     </div>
                                 )}
                             </div>
                             <p className="text-xs text-gray-500 text-center mt-4">
-                                Compara el impacto de lo publicado vs lo efectivamente intercambiado.
+                                {impactMetric === 'COUNT'
+                                    ? 'Cantidad de items publicados vs items que completaron un trueque.'
+                                    : 'Impacto estimado de lo publicado vs impacto real logrado.'}
                             </p>
                         </div>
-
                     </div>
                 </div>
 
