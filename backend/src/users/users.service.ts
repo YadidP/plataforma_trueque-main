@@ -50,28 +50,47 @@ export class UsersService {
   }
 
   // New methods added to satisfy UsersController
-  async getPublicProfile(id: number): Promise<any | null> {
-    const result = await this.pgService.query(
-      `SELECT id, name, email, role, bio, created_at, updated_at 
-       FROM users 
-       WHERE id = $1;`,
-      [id]
-    );
-    const user = result.rows[0];
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
-    // Optionally fetch reviews for this user
-    const reviewsResult = await this.pgService.query(
-      `SELECT r.rating, r.comment, r.created_at, u.name as reviewer_name
-       FROM reviews r
-       JOIN users u ON u.id = r.reviewer_id
-       WHERE r.target_id = $1
-       ORDER BY r.created_at DESC;`,
-      [id]
-    );
-    user.reviews = reviewsResult.rows;
-    return user;
+  async getPublicProfile(userId: number) {
+    // 1. Datos básicos + Bio
+    const userRes = await this.pgService.query('SELECT id, name, email, role, bio, created_at FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    // 2. Promedio de calificación (Corregido con COALESCE para evitar nulos)
+    const ratingRes = await this.pgService.query(`
+        SELECT 
+            COALESCE(AVG(rating), 0) as average, 
+            COUNT(*)::int as count 
+        FROM reviews 
+        WHERE target_id = $1
+    `, [userId]);
+    
+    // 3. Reseñas recibidas
+    const reviewsRes = await this.pgService.query(`
+        SELECT r.rating, r.comment, r.created_at, u.name as reviewer_name 
+        FROM reviews r JOIN users u ON r.reviewer_id = u.id 
+        WHERE r.target_id = $1 ORDER BY r.created_at DESC LIMIT 5`, [userId]);
+
+    // 4. Impacto ambiental acumulado (Consulta robusta)
+    // Sumamos el impacto de todos los intercambios donde el usuario fue comprador O vendedor
+    const impactRes = await this.pgService.query(`
+        SELECT 
+            ei.metric_name, 
+            ei.metric_code,
+            SUM(ei.impact_value) as total, 
+            ei.metric_unit
+        FROM exchange_impacts ei 
+        JOIN exchanges e ON ei.exchange_id = e.id
+        WHERE e.seller_id = $1 OR e.buyer_id = $1
+        GROUP BY ei.metric_name, ei.metric_code, ei.metric_unit
+    `, [userId]);
+
+    return { 
+        ...user, 
+        stats: ratingRes.rows[0], 
+        reviews: reviewsRes.rows, 
+        impact: impactRes.rows 
+    };
   }
 
   async updateBio(userId: number, bio: string): Promise<any> {

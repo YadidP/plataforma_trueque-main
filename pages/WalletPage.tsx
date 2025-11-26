@@ -74,7 +74,7 @@ const WalletPage = () => {
   if (loading) return <Spinner />;
 
   return (
-    <div className="max-w-6xl mx-auto pb-12 px-4">
+    <div className="max-w-6xl mx-auto pb-12 px-4 pt-10">
       {/* Card de Saldo Principal */}
       <div className="bg-gradient-to-r from-green-800 to-green-600 rounded-3xl p-8 text-white shadow-2xl mb-10 flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
         <div className="relative z-10">

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import * as api from "../services/api";
 import { useNotification } from "../hooks/useNotification";
@@ -8,6 +8,8 @@ import { getSubcategoryConfig } from "../utils/subcategoryConfig";
 
 const CreateListingForm: React.FC = () => {
   const [step, setStep] = useState(1);
+  
+  // Datos
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -17,15 +19,20 @@ const CreateListingForm: React.FC = () => {
   const [unitCredits, setUnitCredits] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unitLabel, setUnitLabel] = useState("");
+  
+  // Imágenes
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  
+  // Listas y Estados
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [impactPreview, setImpactPreview] = useState<ImpactMetricResult[] | null>(null);
   const [impactLoading, setImpactLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const navigate = useNavigate();
   const { addNotification } = useNotification();
 
@@ -52,6 +59,7 @@ const CreateListingForm: React.FC = () => {
     }
   }, [selectedSubcategoryName]);
 
+  // Cálculo de impacto en tiempo real
   useEffect(() => {
     const calc = async () => {
       if (selectedMaterialId && quantity && unitLabel) {
@@ -74,11 +82,18 @@ const CreateListingForm: React.FC = () => {
     calc();
   }, [selectedMaterialId, quantity, unitLabel]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement> | File[]) => {
+    const files = Array.isArray(e) ? e : (e.target.files ? Array.from(e.target.files) : []);
+    
+    if (files.length > 0) {
       const max = 10 - imageFiles.length;
       const newFiles = files.slice(0, max);
+      
+      if (newFiles.length === 0 && files.length > 0) {
+        addNotification("Límite de 10 imágenes alcanzado", "error");
+        return;
+      }
+
       setImageFiles(prev => [...prev, ...newFiles]);
       newFiles.forEach((file: File) => {
         const reader = new FileReader();
@@ -96,31 +111,30 @@ const CreateListingForm: React.FC = () => {
   };
 
   const validate = (s: number): boolean => {
-    const err: Record<string, string> = {};
     if (s === 1) {
-      if (!title.trim()) err.title = "Requerido";
-      if (!description.trim()) err.description = "Requerido";
-      if (!categoryId) err.categoryId = "Requerido";
-      if (!selectedSubcategoryId) err.subcategoryId = "Requerido";
+      if (!title.trim() || !description.trim() || !categoryId || !selectedSubcategoryId) {
+        addNotification("Por favor completa todos los campos", "error");
+        return false;
+      }
     } else if (s === 2) {
       const cfg = getSubcategoryConfig(selectedSubcategoryName);
-      if (cfg?.requiresMaterial && !selectedMaterialId) {
-        err.materialId = "Requerido";
+      if ((cfg?.requiresMaterial && !selectedMaterialId) || !unitCredits || !quantity) {
+        addNotification("Faltan datos de especificaciones", "error");
+        return false;
       }
-      if (!unitCredits) err.unitCredits = "Requerido";
     } else if (s === 3) {
-      if (imageFiles.length === 0) err.imageFile = "Requiere al menos 1 imagen";
+      if (imageFiles.length === 0) {
+        addNotification("Debes subir al menos una imagen", "error");
+        return false;
+      }
     }
-    setFormErrors(err);
-    return Object.keys(err).length === 0;
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate(3)) {
-      addNotification("Complete todos los campos", "error");
-      return;
-    }
+    if (!validate(3)) return;
+    
     setLoading(true);
     const data = new FormData();
     data.append("title", title);
@@ -132,12 +146,13 @@ const CreateListingForm: React.FC = () => {
     if (unitLabel) data.append("unitLabel", unitLabel);
     data.append("unitCredits", unitCredits);
     imageFiles.forEach(f => data.append("imageFiles", f));
+    
     try {
       await api.createListing(data);
-      addNotification("Publicacion creada!", "success");
+      addNotification("¡Publicación creada exitosamente!", "success");
       navigate("/dashboard");
     } catch (err) {
-      addNotification("Error al crear", "error");
+      addNotification("Error al crear la publicación", "error");
     } finally {
       setLoading(false);
     }
@@ -146,64 +161,73 @@ const CreateListingForm: React.FC = () => {
   const cfg = getSubcategoryConfig(selectedSubcategoryName);
   const showMat = cfg?.requiresMaterial || false;
 
+  // Dropzone Handlers
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    handleFileChange(files);
+  };
+
   return (
-    <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-      <h1 className="text-3xl font-bold text-green-dark mb-6">Crear Nueva Publicacion</h1>
-      <div className="flex justify-between mb-8">
-        {[1, 2, 3].map(s => {
-          const stepStyle = `flex-1 ${s < 3 ? "mr-4" : ""}`;
-          const btnStyle = s === step ? "bg-green-primary text-white" : s < step ? "bg-green-100 text-green-primary" : "bg-gray-200 text-gray-600";
-          const stepLabel = s === 1 ? "Detalles" : s === 2 ? "Especificaciones" : "Imagenes";
-          return (
-            <div key={s} className={stepStyle}>
-              <div
-                onClick={() => s <= step && setStep(s)}
-                className={`flex items-center justify-center h-12 rounded-full font-semibold cursor-pointer ${btnStyle}`}
-              >
-                {s}
-              </div>
-              <p className="text-center mt-2 text-sm font-medium">{stepLabel}</p>
-            </div>
-          );
-        })}
+    <div className="max-w-3xl mx-auto my-8">
+      {/* Header de Pasos */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+        <h1 className="text-3xl font-extrabold text-green-900 mb-6 text-center">Vender Artículo</h1>
+        <div className="flex justify-between items-center relative">
+            <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-100 -z-10"></div>
+            {[1, 2, 3].map(s => (
+                <div key={s} className={`flex flex-col items-center gap-2 bg-white px-2 cursor-pointer`} onClick={() => s < step && setStep(s)}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${s <= step ? 'bg-green-600 text-white shadow-lg shadow-green-200' : 'bg-gray-200 text-gray-500'}`}>
+                        {s}
+                    </div>
+                    <span className={`text-xs font-semibold ${s <= step ? 'text-green-800' : 'text-gray-400'}`}>
+                        {s === 1 ? 'Detalles' : s === 2 ? 'Datos' : 'Fotos'}
+                    </span>
+                </div>
+            ))}
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
+
+      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+        
+        {/* PASO 1: DETALLES BÁSICOS */}
         {step === 1 && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-green-dark mb-4">Paso 1: Detalles</h2>
+          <div className="space-y-6 animate-in fade-in slide-in-from-right duration-300">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Titulo *</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">¿Qué vas a intercambiar?</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ej: Mesas de madera"
-                className={`w-full px-3 py-2 border rounded-md ${formErrors.title ? "border-red-500" : "border-gray-300"}`}
+                placeholder="Ej: Bicicleta de montaña, Libros de historia..."
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                autoFocus
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descripcion *</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Descripción detallada</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe..."
-                rows={4}
-                className={`w-full px-3 py-2 border rounded-md ${formErrors.description ? "border-red-500" : "border-gray-300"}`}
+                placeholder="Estado, color, tamaño, tiempo de uso..."
+                rows={5}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all resize-none"
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <SearchableSelect
                 id="cat"
-                label="Categoria"
+                label="Categoría"
                 value={categoryId}
                 onChange={setCategoryId}
                 options={categories}
                 required
-                placeholder="Selecciona"
+                placeholder="Selecciona..."
               />
               <SearchableSelect
                 id="subcat"
-                label="Subcategoria"
+                label="Subcategoría"
                 value={selectedSubcategoryId}
                 onChange={(v) => {
                   setSelectedSubcategoryId(v);
@@ -213,26 +237,25 @@ const CreateListingForm: React.FC = () => {
                 options={subcategories}
                 disabled={!categoryId}
                 required
-                placeholder="Selecciona"
+                placeholder="Selecciona..."
               />
             </div>
             <button
               type="button"
               onClick={() => validate(1) && setStep(2)}
-              className="w-full bg-green-primary text-white py-2 rounded hover:bg-green-dark"
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-all shadow-md mt-4"
             >
-              Siguiente
+              Siguiente Paso
             </button>
           </div>
         )}
+
+        {/* PASO 2: ESPECIFICACIONES E IMPACTO */}
         {step === 2 && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-green-dark mb-4">Paso 2: Especificaciones</h2>
-            
-            {/* Selector de Material */}
+          <div className="space-y-6 animate-in fade-in slide-in-from-right duration-300">
             {showMat && (
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                <label className="block text-sm font-medium text-blue-800 mb-2">¿De qué material está hecho principalmente?</label>
+              <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                <label className="block text-sm font-bold text-blue-900 mb-2">Material Principal</label>
                 <SearchableSelect
                   id="mat"
                   label=""
@@ -240,69 +263,58 @@ const CreateListingForm: React.FC = () => {
                   onChange={setSelectedMaterialId}
                   options={materials}
                   required
-                  placeholder="Selecciona el material (ej. Madera, Algodón...)"
+                  placeholder="Ej. Madera, Algodón, Metal..."
                 />
-                <p className="text-xs text-blue-600 mt-2">ℹ️ Esto define el cálculo de huella ecológica.</p>
+                <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
+                  ℹ️ Necesario para calcular la huella de carbono evitada.
+                </p>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Campo Cantidad con Unidad integrada */}
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700">Cantidad Disponible</label>
-                <div className="relative mt-1 rounded-md shadow-sm">
-                  <input
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="block w-full pr-12 border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 py-2 px-3 border"
-                    placeholder="Ej: 5"
-                    required
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">
-                      {unitLabel || 'u.'} {/* Muestra kg, litros o unidades aquí */}
-                    </span>
-                  </div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Cantidad</label>
+                <div className="relative">
+                    <input
+                        type="number"
+                        min="1"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        className="w-full pl-4 pr-16 py-3 rounded-xl border border-gray-200 focus:border-green-500 outline-none"
+                        placeholder="1"
+                    />
+                    <span className="absolute right-4 top-3 text-gray-400 text-sm font-medium">{unitLabel || 'u.'}</span>
                 </div>
               </div>
-
-              {/* Campo Créditos */}
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700">Valor en Créditos (por unidad)</label>
-                <div className="relative mt-1 rounded-md shadow-sm">
-                  <input
-                    type="number"
-                    min="1"
-                    value={unitCredits}
-                    onChange={(e) => setUnitCredits(e.target.value)}
-                    className="block w-full pr-10 border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 py-2 px-3 border"
-                    placeholder="0"
-                    required
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-green-600 font-bold sm:text-sm">✦</span>
-                  </div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Valor (Créditos)</label>
+                <div className="relative">
+                    <input
+                        type="number"
+                        min="1"
+                        value={unitCredits}
+                        onChange={(e) => setUnitCredits(e.target.value)}
+                        className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-200 focus:border-green-500 outline-none"
+                        placeholder="Ej: 50"
+                    />
+                    <span className="absolute right-4 top-3 text-green-600 font-bold">✦</span>
                 </div>
               </div>
             </div>
 
-            {/* Preview del Impacto (Mejorado) */}
-            {impactLoading && <p className="text-green-600 text-sm animate-pulse">🌱 Calculando impacto ambiental...</p>}
+            {/* Preview Impacto */}
+            {impactLoading && <div className="text-center text-green-600 py-4">Calculando impacto ambiental...</div>}
             
             {impactPreview && impactPreview.length > 0 && (
-              <div className="mt-4 p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xl">🌍</span>
-                  <h3 className="font-bold text-green-800">Impacto Positivo Estimado</h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-3">Si vendes todo esto, ayudarás al planeta ahorrando:</p>
+              <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-5 rounded-xl border border-green-200">
+                <h3 className="font-bold text-green-800 flex items-center gap-2 mb-3">
+                  <span>🌍</span> Impacto Estimado
+                </h3>
                 <div className="grid grid-cols-2 gap-3">
                   {impactPreview.map(m => (
-                    <div key={m.code} className="bg-white/60 p-2 rounded-lg flex justify-between items-center border border-green-100">
-                      <span className="text-xs font-medium text-gray-600">{m.name}</span>
-                      <span className="text-sm font-bold text-green-700">{m.value} {m.unit}</span>
+                    <div key={m.code} className="relative bg-white/80 p-2 rounded-lg flex justify-between items-center text-sm">
+                      <span className="text-gray-600">{m.name}</span>
+                      <span className="font-bold text-green-700">{m.value} {m.unit}</span>
                     </div>
                   ))}
                 </div>
@@ -310,92 +322,83 @@ const CreateListingForm: React.FC = () => {
             )}
 
             <div className="flex gap-4 mt-6">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="flex-1 border-2 border-gray-200 text-gray-600 py-2 rounded-lg hover:bg-gray-50 font-medium"
-              >
+              <button type="button" onClick={() => setStep(1)} className="flex-1 py-3 border-2 border-gray-100 text-gray-500 font-bold rounded-xl hover:bg-gray-50">
                 Atrás
               </button>
-              <button
-                type="button"
-                onClick={() => validate(2) && setStep(3)}
-                className="flex-1 bg-green-primary text-white py-2 rounded-lg hover:bg-green-dark font-medium shadow-md hover:shadow-lg transition-all"
-              >
-                Continuar a Imágenes
+              <button type="button" onClick={() => validate(2) && setStep(3)} className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 shadow-md">
+                Continuar
               </button>
             </div>
           </div>
         )}
+
+        {/* PASO 3: IMÁGENES (MEJORADO) */}
         {step === 3 && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-green-dark mb-4">Paso 3: Imagenes</h2>
-            {imagePreviews.length > 0 ? (
-              <div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                  {imagePreviews.map((p, i) => (
-                    <div key={i} className="relative">
-                      <img
-                        src={p}
-                        alt={`img${i}`}
-                        className="w-full h-32 object-cover rounded"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(i)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-                      >
-                        X
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                {imageFiles.length < 10 && (
-                  <input
+          <div className="space-y-6 animate-in fade-in slide-in-from-right duration-300">
+            <div 
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all ${isDragOver ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-50 hover:border-green-400'}`}
+            >
+                <div className="text-4xl mb-4">📸</div>
+                <h3 className="font-bold text-gray-700 mb-2">Sube fotos de tu artículo</h3>
+                <p className="text-sm text-gray-500 mb-6">Arrastra y suelta aquí o haz clic para buscar</p>
+                
+                <input
                     type="file"
                     multiple
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="w-full"
-                  />
-                )}
-              </div>
-            ) : (
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileChange}
-                className="w-full"
-              />
-            )}
-            <p className="text-xs text-gray-500">{imageFiles.length}/10 imagenes</p>
-            <div className="bg-gray-50 p-4 rounded">
-              <h3 className="font-semibold mb-3">Resumen:</h3>
-              <ul className="text-sm space-y-1">
-                <li><strong>Titulo:</strong> {title}</li>
-                <li><strong>Categoria:</strong> {categories.find(c => c.id.toString() === categoryId)?.name}</li>
-                <li><strong>Subcategoria:</strong> {selectedSubcategoryName}</li>
-                {showMat && selectedMaterialId && (
-                  <li><strong>Material:</strong> {materials.find(m => m.id.toString() === selectedMaterialId)?.name}</li>
-                )}
-                <li><strong>Creditos:</strong> {unitCredits}</li>
-              </ul>
+                    id="file-upload"
+                    className="hidden"
+                />
+                <label 
+                    htmlFor="file-upload" 
+                    className="inline-block bg-white border border-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg cursor-pointer hover:bg-gray-50 transition shadow-sm"
+                >
+                    Seleccionar Archivos
+                </label>
+                <p className="text-xs text-gray-400 mt-4">{imageFiles.length}/10 imágenes seleccionadas</p>
             </div>
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="flex-1 border-2 border-green-primary text-green-primary py-2 rounded hover:bg-green-50"
-              >
-                Anterior
+
+            {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                    {imagePreviews.map((p, i) => (
+                        <div key={i} className="relative aspect-square group">
+                            <img src={p} alt="preview" className="w-full h-full object-cover rounded-xl shadow-sm border border-gray-100" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                                <button 
+                                    type="button"
+                                    onClick={() => removeImage(i)}
+                                    className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-transform hover:scale-110"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <h4 className="font-bold text-gray-700 mb-2 text-sm uppercase">Resumen</h4>
+                <p className="text-sm text-gray-600"><span className="font-semibold">Título:</span> {title}</p>
+                <p className="text-sm text-gray-600"><span className="font-semibold">Valor:</span> {unitCredits} créditos</p>
+            </div>
+
+            <div className="flex gap-4 pt-2">
+              <button type="button" onClick={() => setStep(2)} className="flex-1 py-3 border-2 border-gray-100 text-gray-500 font-bold rounded-xl hover:bg-gray-50">
+                Atrás
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-green-primary text-white py-2 rounded hover:bg-green-dark disabled:bg-gray-400"
+                className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-200 disabled:bg-gray-400 disabled:shadow-none transition-all"
               >
-                {loading ? "Publicando..." : "Publicar"}
+                {loading ? "Publicando..." : "¡Publicar Ahora!"}
               </button>
             </div>
           </div>
