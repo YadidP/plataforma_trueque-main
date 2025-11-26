@@ -45,4 +45,14 @@ export class AdminController {
     const start = startDate || new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0];
     return this.adminService.getUserDynamics(start, end, role || 'ALL');
   }
+
+  @Get('charts/economy')
+  getEconomyData(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    const end = endDate || new Date().toISOString().split('T')[0];
+    const start = startDate || new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0];
+    return this.adminService.getEconomyData(start, end);
+  }
 }

@@ -190,6 +190,11 @@ export const getAdminUserDynamics = async (startDate: string, endDate: string, r
   return response.data;
 };
 
+export const getAdminEconomyData = async (startDate: string, endDate: string) => {
+  const response = await http.get('/admin/charts/economy', { params: { startDate, endDate } });
+  return response.data;
+};
+
 // --- CLAIMS (User) ---
 export const createClaim = async (data: { exchangeId?: number; listingId?: number; reason: string }): Promise<void> => {
   await http.post('/claims', data);

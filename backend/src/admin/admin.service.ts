@@ -85,4 +85,33 @@ export class AdminService {
             }))
         };
     }
+    // MÓDULO 3: ECONOMÍA Y MERCADO
+    async getEconomyData(startDate: string, endDate: string) {
+        const [supplyRes, originRes, rankingRes] = await Promise.all([
+            // 1. Oferta vs Demanda
+            this.pgService.query('SELECT * FROM fn_chart_supply_demand($1, $2)', [startDate, endDate]),
+            // 2. Origen Créditos
+            this.pgService.query('SELECT * FROM fn_chart_credit_origin($1, $2)', [startDate, endDate]),
+            // 3. Ranking
+            this.pgService.query('SELECT * FROM fn_chart_user_ranking($1, $2)', [startDate, endDate])
+        ]);
+
+        return {
+            supplyDemand: supplyRes.rows.map(r => ({
+                month_label: r.month_label,
+                listings_count: Number(r.listings_count),
+                exchanges_count: Number(r.exchanges_count)
+            })),
+            creditOrigin: originRes.rows.map(r => ({
+                source_type: r.source_type,
+                total_credits: Number(r.total_credits)
+            })),
+            ranking: rankingRes.rows.map(r => ({
+                ...r,
+                score: Number(r.score).toFixed(1), // Redondear score visualmente
+                exchanges_count: Number(r.exchanges_count),
+                listings_count: Number(r.listings_count)
+            }))
+        };
+    }
 }
