@@ -33,17 +33,23 @@ const Header = () => {
               <Link to="/dashboard" className="text-green-100 hover:text-white font-medium transition-colors text-sm uppercase tracking-wide">
                 Dashboard
               </Link>
+
+              {/* ENLACE RESTAURADO */}
+              <Link to="/wallet" className="text-green-100 hover:text-white font-medium transition-colors text-sm uppercase tracking-wide">
+                Mi Billetera
+              </Link>
+
               {isAdmin && (
                 <Link to="/admin" className="text-yellow-300 hover:text-yellow-100 font-medium transition-colors text-sm uppercase tracking-wide">
                   Admin
                 </Link>
               )}
-              
+
               <div className="h-6 w-px bg-green-700 mx-2"></div>
 
               <div className="flex items-center gap-4">
-                <Link 
-                  to={`/profile/${user?.id}`} 
+                <Link
+                  to={`/profile/${user?.id}`}
                   className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-green-800 hover:bg-green-700 transition-all border border-green-700"
                 >
                   <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm">
@@ -51,7 +57,7 @@ const Header = () => {
                   </div>
                   <span className="text-sm font-semibold text-green-50">{user?.name.split(' ')[0]}</span>
                 </Link>
-                
+
                 <button
                   onClick={handleLogout}
                   className="text-green-300 hover:text-red-400 transition-colors text-sm font-bold"
