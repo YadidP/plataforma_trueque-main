@@ -15,7 +15,7 @@ const AdminPage = () => {
 
     // 1. Estados de Filtros
     const [dateRange, setDateRange] = useState({
-        startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0], // Inicio de año
+        startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0], // Inicio de año por defecto
         endDate: new Date().toISOString().split('T')[0] // Hoy
     });
 
@@ -28,7 +28,7 @@ const AdminPage = () => {
 
     // Filtros extra
     const [roleFilter, setRoleFilter] = useState('ALL');
-    const [impactMetric, setImpactMetric] = useState('CO2');
+    const [impactMetric, setImpactMetric] = useState('CO2'); // Default: Huella de Carbono
 
     // 3. Estado del Modal de Detalles
     const [modalOpen, setModalOpen] = useState(false);
@@ -97,9 +97,11 @@ const AdminPage = () => {
         pdf.save(`reporte_admin_${dateRange.endDate}.pdf`);
     };
 
-    // Colores para gráficos
+    // --- CONFIGURACIÓN DE COLORES ---
     const PIE_COLORS = ['#4ade80', '#3b82f6', '#9ca3af'];
-    const ORIGIN_COLORS = ['#ef4444', '#22c55e']; // Rojo (Compra) y Verde (Intercambio)
+
+    // Colores para Origen del Capital (Rojo: Compra, Verde: Intercambio)
+    const ORIGIN_COLORS = ['#8e72d5ff', '#4da6d9ff'];
 
     // Helper para etiquetas del gráfico de impacto
     const getMetricLabel = (code: string) => {
@@ -327,7 +329,7 @@ const AdminPage = () => {
                             </div>
                         </div>
 
-                        {/* Origen Créditos - CORREGIDO: AHORA ES UN PIE CHART */}
+                        {/* Origen Créditos - PIE CHART (CORREGIDO) */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <h3 className="font-bold text-gray-700 mb-4 text-center">Origen del Capital</h3>
                             <div className="h-72">
@@ -345,7 +347,7 @@ const AdminPage = () => {
                                                 <Cell key={`cell-${index}`} fill={ORIGIN_COLORS[index % ORIGIN_COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip />
+                                        <Tooltip formatter={(value) => `${value} Créditos`} />
                                         <Legend verticalAlign="bottom" height={36} />
                                     </PieChart>
                                 </ResponsiveContainer>
@@ -394,11 +396,11 @@ const AdminPage = () => {
                             Impacto Ambiental Detallado
                         </h2>
 
-                        {/* FILTRO DE MÉTRICAS FUNCIONAL */}
+                        {/* FILTRO DE MÉTRICAS (INCLUYE CANTIDAD) */}
                         <select
                             value={impactMetric}
                             onChange={(e) => setImpactMetric(e.target.value)}
-                            className="border-gray-300 rounded-lg text-sm p-2 bg-white shadow-sm focus:ring-green-500 focus:border-green-500 font-bold text-gray-700"
+                            className="border-gray-300 rounded-lg text-sm p-2 bg-white shadow-sm focus:ring-green-500 focus:border-green-500 font-bold text-gray-700 cursor-pointer"
                         >
                             <option value="COUNT">📊 Cantidad (Publicado vs Intercambiado)</option>
                             <option value="CO2">☁️ Huella de Carbono (CO2)</option>
@@ -448,7 +450,7 @@ const AdminPage = () => {
                             </div>
                         </div>
 
-                        {/* Gráfico 2: Comparativa Dinámica (Corregido para usar impactMetric) */}
+                        {/* Gráfico 2: Comparativa Dinámica */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <h3 className="font-bold text-gray-700 mb-4 text-center">
                                 Comparativa: {impactMetric === 'COUNT' ? 'Oferta vs Ventas' : 'Potencial vs Real'}
@@ -462,8 +464,21 @@ const AdminPage = () => {
                                             <YAxis label={{ value: getMetricLabel(impactMetric), angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }} />
                                             <Tooltip contentStyle={{ borderRadius: '12px' }} />
                                             <Legend verticalAlign="top" height={36} iconType="circle" />
-                                            <Bar dataKey="potential_val" name={impactMetric === 'COUNT' ? "Publicados" : "Potencial"} fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
-                                            <Bar dataKey="real_val" name={impactMetric === 'COUNT' ? "Intercambiados" : "Real"} fill="#16a34a" radius={[4, 4, 0, 0]} barSize={20} />
+                                            {/* COLORES Y NOMBRES DINÁMICOS SEGÚN MÉTRICA */}
+                                            <Bar
+                                                dataKey="potential_val"
+                                                name={impactMetric === 'COUNT' ? "Publicados" : "Potencial"}
+                                                fill={impactMetric === 'COUNT' ? "#8385d9ff" : "#94a3b8"}
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={20}
+                                            />
+                                            <Bar
+                                                dataKey="real_val"
+                                                name={impactMetric === 'COUNT' ? "Intercambiados" : "Real"}
+                                                fill={impactMetric === 'COUNT' ? "#22c55e" : "#16a34a"}
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={20}
+                                            />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 ) : (
