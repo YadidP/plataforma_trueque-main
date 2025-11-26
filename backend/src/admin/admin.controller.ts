@@ -1,32 +1,48 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+// Asumimos que tienes un guard de admin, si no, usa el AuthenticatedGuard y valida rol en servicio o guard
+// Por ahora usaremos AuthenticatedGuard por simplicidad
+import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
 
 @ApiTags('admin')
 @Controller('admin')
+@UseGuards(AuthenticatedGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) { }
 
-  // Aquí irían los endpoints para auditoría, gestión de usuarios, etc.
-
-  @Get('admin-only')
-  @ApiOperation({ summary: 'Test admin access' })
-  getAdminData() {
-    return "Acceso permitido solo a admin (ahora público para simplificación)";
-  }
-
-  @Get('stats/publications')
-  @ApiOperation({ summary: 'Get total publications count' })
-  getPublicationsCount() {
-    return this.adminService.getPublicationsCount();
-  }
-
-  @Get('stats/publications-vs-exchanges')
-  @ApiOperation({ summary: 'Get publications vs exchanges comparison data' })
-  getPublicationsVsExchanges(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+  @Get('kpi-summary')
+  @ApiOperation({ summary: 'Obtener indicadores principales para el dashboard' })
+  getKpiSummary(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
   ) {
-    return this.adminService.getPublicationsVsExchanges(startDate, endDate);
+    // Fechas por defecto si no vienen
+    const end = endDate || new Date().toISOString().split('T')[0];
+    const start = startDate || new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0];
+    return this.adminService.getKpiSummary(start, end);
+  }
+
+  @Get('list/users')
+  getUsersList() { return this.adminService.getUsersList(); }
+
+  @Get('list/finance')
+  getFinanceList() { return this.adminService.getFinanceList(); }
+
+  @Get('list/listings')
+  getListingsList() { return this.adminService.getListingsList(); }
+
+  @Get('list/exchanges')
+  getExchangesList() { return this.adminService.getExchangesList(); }
+
+  @Get('charts/user-dynamics')
+  getUserDynamics(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('role') role: string, // admin, usuario, emprendedor, ALL
+  ) {
+    const end = endDate || new Date().toISOString().split('T')[0];
+    const start = startDate || new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0];
+    return this.adminService.getUserDynamics(start, end, role || 'ALL');
   }
 }

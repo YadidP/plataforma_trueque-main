@@ -159,64 +159,40 @@ export const postImpactPreview = async (data: { material_id: number; quantity: n
   return response.data;
 };
 
-// --- ADMIN REPORTS ---
-interface DateRangeParams {
-  startDate?: string;
-  endDate?: string;
-}
-
-export const getUsersReport = async (params: DateRangeParams = {}): Promise<UserReport> => {
-  const response = await http.get('/reports/admin/users', { params });
+// --- ADMIN MODULE 1 ---
+export const getAdminKpiSummary = async (startDate: string, endDate: string) => {
+  const response = await http.get('/admin/kpi-summary', { params: { startDate, endDate } });
   return response.data;
 };
 
-export const getMonetizationReport = async (params: DateRangeParams = {}): Promise<MonetizationReport> => {
-  const response = await http.get('/reports/admin/monetization', { params });
+export const getAdminUsersList = async () => {
+  const response = await http.get('/admin/list/users');
   return response.data;
 };
 
-export const getImpactReport = async (params: DateRangeParams = {}): Promise<ImpactReport> => {
-  const response = await http.get('/reports/admin/impact', { params });
+export const getAdminFinanceList = async () => {
+  const response = await http.get('/admin/list/finance');
   return response.data;
 };
 
-// Nueva función para el reporte de reclamos
-export const getClaimsReport = async (params: DateRangeParams = {}): Promise<ClaimsReport> => {
-  const response = await http.get('/reports/admin/claims', { params });
+export const getAdminListingsList = async () => {
+  const response = await http.get('/admin/list/listings');
   return response.data;
 };
 
-export const getAdvancedReport = async (): Promise<AdvancedReport> => {
-  const response = await http.get('/reports/admin/advanced');
+export const getAdminExchangesList = async () => {
+  const response = await http.get('/admin/list/exchanges');
   return response.data;
 };
 
+export const getAdminUserDynamics = async (startDate: string, endDate: string, role: string = 'ALL') => {
+  const response = await http.get('/admin/charts/user-dynamics', { params: { startDate, endDate, role } });
+  return response.data;
+};
+
+// --- CLAIMS (User) ---
 export const createClaim = async (data: { exchangeId?: number; listingId?: number; reason: string }): Promise<void> => {
   await http.post('/claims', data);
-};// --- ADMIN CLAIMS MANAGEMENT ---
-export const getAllClaims = async (): Promise<any[]> => {
-  const response = await http.get('/claims');
-  return response.data;
-};
-
-export const getActiveClaims = async (): Promise<any[]> => {
-  const response = await http.get('/claims/active');
-  return response.data;
-};
-
-export const resolveClaim = async (claimId: number): Promise<void> => {
-  await http.patch(`/claims/${claimId}/resolve`);
-};
-
-// --- ADMIN STATISTICS ---
-export const getPublicationsCount = async (): Promise<{ total: number }> => {
-  const response = await http.get('/admin/stats/publications');
-  return response.data;
-};
-
-export const getPublicationsVsExchanges = async (params: DateRangeParams = {}): Promise<any[]> => {
-  const response = await http.get('/admin/stats/publications-vs-exchanges', { params });
-  return response.data;
 };
 
 // --- USER PROFILES & REVIEWS ---
