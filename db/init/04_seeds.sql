@@ -203,11 +203,11 @@ INSERT INTO listings (author_id, title, description, category_id, subcategory_id
  1, -- 1 unidad
  30, 'unidades', '/uploads/libro_algebra.jpg', 'activa');
 
--- PLANES DE SUSCRIPCIÓN (Solo Premium, precios en Bs)
-DELETE FROM subscriptions; -- Limpiar anteriores para evitar duplicados lógicos
-INSERT INTO subscriptions (name, price_bs, duration_days, description) VALUES
-('Plan Eco-Pro', 80.00, 30, 'Destaca tus publicaciones al inicio. Soporte prioritario.'),
-('Plan Eco-Leader', 150.00, 30, 'Máxima visibilidad. Insignia de Líder Verde. Acceso anticipado a eventos.')
+-- PLANES DE SUSCRIPCIÓN (Con prioridades)
+INSERT INTO subscriptions (name, price_bs, duration_days, priority, description) VALUES
+('Gratuito', 0, 3650, 0, 'Plan básico.'),
+('Plan Eco-Pro', 80.00, 30, 1, 'Visibilidad media. Soporte prioritario.'),
+('Plan Eco-Leader', 150.00, 30, 2, 'Máxima visibilidad (Top). Insignia de Líder.')
 ON CONFLICT (name) DO NOTHING;
 
 -- Asignar suscripción gratuita a usuarios existentes si no tienen

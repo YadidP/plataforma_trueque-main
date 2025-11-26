@@ -159,13 +159,30 @@ const WalletPage = () => {
                     <div className="space-y-4">
                         {plans.map(plan => {
                             const isCurrent = activeSub?.id === plan.id;
+                            
+                            // Calcular precio upgrade
+                            let displayPrice = parseFloat(plan.price_bs);
+                            let isUpgrade = false;
+                            let isDisabled = false;
+
+                            if (activeSub) {
+                                const currentPrice = parseFloat(activeSub.price_bs);
+                                // Si es el mismo
+                                if (isCurrent) isDisabled = true;
+                                // Si el plan es mas barato (y no es el gratis), deshabilitar (no downgrade)
+                                else if (displayPrice < currentPrice && displayPrice > 0) isDisabled = true; 
+                                // Si el plan es mas caro, es upgrade
+                                else if (displayPrice > currentPrice) {
+                                    displayPrice = displayPrice - currentPrice;
+                                    isUpgrade = true;
+                                }
+                                // Si el plan es gratis (0) y tengo uno activo, deshabilitar
+                                else if (displayPrice === 0) isDisabled = true;
+                            }
+
                             return (
-                                <div key={plan.id} className={`relative p-6 rounded-2xl border-2 transition-all ${isCurrent ? 'border-green-500 bg-green-50' : 'border-gray-100 bg-white hover:border-yellow-400 hover:shadow-md'}`}>
-                                    {isCurrent && (
-                                        <div className="absolute -top-3 left-6 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                                            PLAN ACTUAL
-                                        </div>
-                                    )}
+                                <div key={plan.id} className={`relative p-6 rounded-2xl border-2 transition-all ${isCurrent ? 'border-green-500 bg-green-50' : isDisabled ? 'border-gray-200 bg-gray-100 opacity-60' : 'border-gray-100 bg-white hover:border-yellow-400 hover:shadow-md'}`}>
+                                    {isCurrent && <div className="absolute -top-3 left-6 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">PLAN ACTUAL</div>}
                                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                         <div className="flex-1">
                                             <h4 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -175,21 +192,16 @@ const WalletPage = () => {
                                             <p className="text-gray-600 text-sm mt-2">{plan.description}</p>
                                         </div>
                                         <div className="text-right min-w-[120px]">
-                                            <div className="text-2xl font-bold text-gray-900">{plan.price_bs} Bs</div>
-                                            <div className="text-xs text-gray-500 mb-3">mensuales</div>
+                                            <div className="text-2xl font-bold text-gray-900">{displayPrice.toFixed(2)} Bs</div>
+                                            <div className="text-xs text-gray-500 mb-3">{isUpgrade ? 'por la mejora' : 'mensuales'}</div>
                                             
-                                            {isCurrent ? (
-                                                <button disabled className="w-full py-2 px-4 bg-green-200 text-green-800 rounded-lg font-bold text-sm cursor-default">
-                                                    Activo
-                                                </button>
-                                            ) : (
-                                                <button 
-                                                    onClick={() => setConfirmModal({ isOpen: true, type: 'plan', item: plan })}
-                                                    className="w-full py-2 px-4 bg-black text-white rounded-lg font-bold text-sm hover:bg-gray-800 transition-colors"
-                                                >
-                                                    Suscribirse
-                                                </button>
-                                            )}
+                                            <button 
+                                                onClick={() => !isDisabled && !isCurrent && setConfirmModal({ isOpen: true, type: 'plan', item: { ...plan, price_bs: displayPrice, isUpgrade } })}
+                                                disabled={isDisabled || isCurrent}
+                                                className={`w-full py-2 px-4 rounded-lg font-bold text-sm transition-colors ${isCurrent ? 'bg-green-200 text-green-800 cursor-default' : isDisabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}`}
+                                            >
+                                                {isCurrent ? 'Activo' : isUpgrade ? 'Mejorar Plan' : 'Suscribirse'}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

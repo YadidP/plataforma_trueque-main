@@ -59,43 +59,60 @@ export class CreditsService {
   }
 
   async buySubscription(userId: number, planId: number) {
-    // 1. Obtener precio del plan
-    const planRes = await this.pgService.query('SELECT * FROM subscriptions WHERE id = $1', [planId]);
-    const plan = planRes.rows[0];
-    if (!plan) throw new BadRequestException('Plan no válido');
+    // Obtener plan deseado
+    const targetPlanRes = await this.pgService.query('SELECT * FROM subscriptions WHERE id = $1', [planId]);
+    const targetPlan = targetPlanRes.rows[0];
+    if (!targetPlan) throw new BadRequestException('Plan no válido');
 
-    // 2. Verificar si ya tiene ESTE plan activo para no cobrar doble
-    const current = await this.getActiveSubscription(userId);
-    if (current && current.id === planId) {
-      throw new BadRequestException('Ya tienes este plan activo.');
+    // Obtener plan actual
+    const currentSub = await this.getActiveSubscription(userId);
+    
+    // Obtener detalles del plan actual para comparar prioridades y precios
+    let currentPlanData = null;
+    if (currentSub) {
+        const cpRes = await this.pgService.query('SELECT * FROM subscriptions WHERE id = $1', [currentSub.id]);
+        currentPlanData = cpRes.rows[0];
     }
 
-    // 3. Transacción
+    // Lógica de precios y restricciones
+    let finalPrice = parseFloat(targetPlan.price_bs);
+
+    if (currentPlanData) {
+        // No permitir comprar el mismo o inferior (Downgrade/Igual) si es de pago
+        if (currentPlanData.priority >= targetPlan.priority && targetPlan.priority > 0) {
+            throw new BadRequestException('No puedes cambiar a un plan de menor o igual jerarquía hasta que termine tu suscripción actual.');
+        }
+
+        // Si es Upgrade (subir de nivel), cobrar solo la diferencia
+        if (currentPlanData.priority > 0 && targetPlan.priority > currentPlanData.priority) {
+            const priceDiff = parseFloat(targetPlan.price_bs) - parseFloat(currentPlanData.price_bs);
+            finalPrice = priceDiff > 0 ? priceDiff : 0;
+        }
+    }
+
+    // Transacción de compra (igual que antes, pero usando finalPrice)
     await this.pgService.query('BEGIN');
     try {
-      // A) Desactivar plan anterior (si existe)
-      await this.pgService.query('UPDATE user_subscriptions SET is_active = false WHERE user_id = $1', [userId]);
+        // Desactivar anterior
+        await this.pgService.query('UPDATE user_subscriptions SET is_active = false WHERE user_id = $1', [userId]);
 
-      // B) Registrar el "Pago" en Bs (Simulado).
-      // IMPORTANTE: No descontamos de la billetera de créditos (wallets),
-      // sino que registramos un ingreso monetario directo en credit_purchases con 0 créditos otorgados.
-      await this.pgService.query(
-        "INSERT INTO credit_purchases (user_id, credits, amount_bs, status, payment_ref) VALUES ($1, 0, $2, 'pagado', 'SUSCRIPCION')",
-        [userId, plan.price_bs]
-      );
+        // Registrar Pago (Diferencia)
+        await this.pgService.query(
+            "INSERT INTO credit_purchases (user_id, credits, amount_bs, status, payment_ref) VALUES ($1, 0, $2, 'pagado', 'UPGRADE_SUSCRIPCION')", 
+            [userId, finalPrice]
+        );
 
-      // C) Activar nueva suscripción
-      await this.pgService.query(`
+        // Activar nuevo
+        await this.pgService.query(`
             INSERT INTO user_subscriptions (user_id, subscription_id, start_date, end_date, is_active)
             VALUES ($1, $2, NOW(), NOW() + ($3 || ' days')::interval, true)
-        `, [userId, planId, plan.duration_days]);
+        `, [userId, planId, targetPlan.duration_days]);
 
-      await this.pgService.query('COMMIT');
-      return { message: `¡Te has suscrito al ${plan.name} exitosamente!` };
+        await this.pgService.query('COMMIT');
+        return { message: `¡Plan mejorado a ${targetPlan.name} por ${finalPrice} Bs!` };
     } catch (e) {
-      await this.pgService.query('ROLLBACK');
-      console.error(e);
-      throw new InternalServerErrorException('Error al procesar la suscripción');
+        await this.pgService.query('ROLLBACK');
+        throw new InternalServerErrorException('Error al procesar');
     }
   }
 }

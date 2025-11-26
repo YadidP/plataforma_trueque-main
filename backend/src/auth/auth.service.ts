@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -12,20 +12,37 @@ export class AuthService {
     ) { }
 
     async register(createUserDto: CreateUserDto) {
-        const user = await this.usersService.create(createUserDto);
+        try {
+            // 1. Crear usuario (La billetera se crea por Trigger en DB)
+            const user = await this.usersService.create(createUserDto);
 
-        // La billetera se crea automáticamente a través del trigger 't_bono_bienvenida' en la DB
+            // 2. Asignar Plan Gratuito Automáticamente
+            // Buscamos el plan con prioridad 0 (Gratuito)
+            const subRes = await this.pgService.query("SELECT id FROM subscriptions WHERE priority = 0 LIMIT 1");
+            
+            if (subRes.rows.length > 0) {
+                const freePlanId = subRes.rows[0].id;
+                await this.pgService.query(`
+                    INSERT INTO user_subscriptions (user_id, subscription_id, start_date, end_date, is_active)
+                    VALUES ($1, $2, NOW(), NOW() + INTERVAL '10 years', true)
+                `, [user.id, freePlanId]);
+            } else {
+                console.warn('ADVERTENCIA: No se encontró un plan gratuito (prioridad 0) en la base de datos para asignar al usuario nuevo.');
+            }
 
-        return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-        };
+            return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            };
+        } catch (error) {
+            console.error('Error en registro:', error);
+            throw new InternalServerErrorException('Error al registrar el usuario. Intente nuevamente.');
+        }
     }
 
     async login(email: string, password: string) {
-        // Buscar usuario incluyendo password_hash
         const result = await this.pgService.query(
             'SELECT id, name, email, password_hash, role FROM users WHERE email = $1',
             [email]
@@ -33,12 +50,12 @@ export class AuthService {
         const user = result.rows[0];
 
         if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
+            throw new UnauthorizedException('Credenciales inválidas');
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password_hash);
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
+            throw new UnauthorizedException('Credenciales inválidas');
         }
 
         return {

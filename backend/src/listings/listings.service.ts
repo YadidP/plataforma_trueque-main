@@ -73,43 +73,40 @@ export class ListingsService {
         l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
         l.unit_credits as "unitCredits", l.quantity, l.unit_label as "unitLabel",
         l.material_id as "materialId",
-        l.category_id as "categoryId", -- AGREGADO: Faltaba esto para que el filtro funcione
+        l.category_id as "categoryId",
         l.created_at as "createdAt",
         u.name as author_name, u.id as author_id,
-        -- Detectar si el autor tiene suscripción Premium activa (ID 2 es el ejemplo de Premium)
-        CASE 
-            WHEN EXISTS (
-                SELECT 1 FROM user_subscriptions us 
-                JOIN subscriptions s ON us.subscription_id = s.id
-                WHERE us.user_id = l.author_id 
-                AND s.name LIKE '%Premium%' 
-                AND us.is_active = true 
-                AND us.end_date > NOW()
-            ) THEN 1 
-            ELSE 0 
-        END as is_premium
+        -- Obtenemos la prioridad más alta activa
+        COALESCE((
+            SELECT MAX(s.priority)
+            FROM user_subscriptions us 
+            JOIN subscriptions s ON us.subscription_id = s.id
+            WHERE us.user_id = l.author_id 
+            AND us.is_active = true 
+            AND us.end_date > NOW()
+        ), 0) as priority_level
       FROM listings l
       JOIN users u ON l.author_id = u.id
       WHERE l.status = 'activa'
-      ORDER BY is_premium DESC, l.created_at DESC; -- Primero Premium, luego los más recientes
+      ORDER BY priority_level DESC, l.created_at DESC; -- ORDENAMIENTO CLAVE
     `;
     
     const result = await this.pgService.query(query);
 
-    return Promise.all(result.rows.map(async (listing) => {
+    return Promise.all(result.rows.map(async (row) => { // Cambiado a 'row' para evitar conflicto con 'listing' en el mapa
       let potentialImpact = [];
-      if (listing.materialId && listing.quantity && listing.unitLabel) {
+      if (row.materialId && row.quantity && row.unitLabel) {
         try {
           potentialImpact = await this.impactService.calculateImpactPreview({
-            material_id: listing.materialId,
-            quantity: Number(listing.quantity),
-            quantity_unit: listing.unitLabel
+            material_id: row.materialId,
+            quantity: Number(row.quantity),
+            quantity_unit: row.unitLabel
           });
         } catch (e) {}
       }
       return {
-        ...listing,
-        author: { name: listing.author_name, id: listing.author_id, isPremium: listing.is_premium === 1 },
+        ...row,
+        author: { name: row.author_name, id: row.author_id, isPremium: row.priority_level > 0 },
         potentialImpact
       };
     }));

@@ -1,3 +1,4 @@
+// ... imports ...
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -28,62 +29,72 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 px-4">
-            <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full">
-                <h1 className="text-3xl font-bold text-green-dark mb-6 text-center">Iniciar Sesión</h1>
+        <div className="min-h-screen flex bg-white">
+            {/* Lado Izquierdo - Decorativo */}
+            <div className="hidden lg:flex w-1/2 bg-green-900 items-center justify-center relative overflow-hidden">
+                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                <div className="z-10 text-white p-12">
+                    <h1 className="text-5xl font-bold mb-6">EcoTrade</h1>
+                    <p className="text-xl text-green-100">Únete a la revolución de la economía circular. Intercambia, ahorra y ayuda al planeta.</p>
+                </div>
+            </div>
+            {/* Lado Derecho - Formulario */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+                <div className="max-w-md w-full bg-white p-10 rounded-3xl shadow-xl">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2">¡Hola de nuevo! 👋</h2>
+                    <p className="text-gray-500 mb-8">Ingresa tus credenciales para continuar.</p>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                                Correo Electrónico
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                placeholder="tu@email.com"
+                            />
+                        </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                            Correo Electrónico
-                        </label>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-primary focus:border-transparent outline-none"
-                            placeholder="tu@email.com"
-                        />
+                        <div>
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                                Contraseña
+                            </label>
+                            <input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                minLength={6}
+                                className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                placeholder="••••••"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white p-4 rounded-xl font-bold transition-colors disabled:bg-gray-400"
+                        >
+                            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                        </button>
+                    </form>
+
+                    <div className="mt-6 text-center">
+                        <p className="text-gray-600">
+                            ¿No tienes una cuenta?{' '}
+                            <Link to="/register" className="text-green-600 hover:underline font-semibold">
+                                Regístrate aquí
+                            </Link>
+                        </p>
                     </div>
-
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                            Contraseña
-                        </label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            minLength={6}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-primary focus:border-transparent outline-none"
-                            placeholder="••••••"
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-green-primary hover:bg-green-dark text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-400"
-                    >
-                        {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-                    </button>
-                </form>
-
-                <div className="mt-6 text-center">
-                    <p className="text-gray-600">
-                        ¿No tienes una cuenta?{' '}
-                        <Link to="/register" className="text-green-primary hover:underline font-semibold">
-                            Regístrate aquí
-                        </Link>
-                    </p>
                 </div>
             </div>
         </div>
     );
 };
-
 export default LoginPage;

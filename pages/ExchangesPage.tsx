@@ -4,11 +4,19 @@ import { Exchange } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import Spinner from '../components/Spinner';
 import { Link } from 'react-router-dom';
+import { useNotification } from '../hooks/useNotification';
+
 
 const ExchangesPage = () => {
   const { user } = useAuth();
+  const { addNotification } = useNotification();
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ratingModal, setRatingModal] = useState<any>(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
 
   useEffect(() => {
     const fetchExchanges = async () => {
@@ -24,6 +32,32 @@ const ExchangesPage = () => {
     };
     fetchExchanges();
   }, []);
+
+  const handleSubmitReview = async () => {
+    if (!ratingModal || rating === 0) {
+      addNotification('Por favor, selecciona una calificación.', 'error');
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await api.rateUser({
+        targetId: ratingModal.targetId,
+        exchangeId: ratingModal.exchangeId,
+        rating: rating,
+        comment: comment,
+      });
+      addNotification('¡Calificación enviada con éxito!', 'success');
+      setRatingModal(null);
+      setRating(0);
+      setComment('');
+      // Opcional: Refrescar la lista de intercambios o actualizar el estado para reflejar que ya se calificó
+    } catch (error: any) {
+      addNotification(error.response?.data?.message || 'Error al enviar calificación.', 'error');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
 
   if (loading) return <Spinner />;
 
@@ -82,6 +116,17 @@ const ExchangesPage = () => {
                         </span>
                     </div>
                 </div>
+                {isBuyer && (
+                    <div className="mt-4 pt-4 border-t flex justify-end gap-2">
+                        <Link to={`/profile/${ex.sellerId}`} className="text-sm text-blue-600 hover:underline px-3 py-1">Ver Perfil</Link>
+                        <button 
+                            onClick={() => setRatingModal({ targetId: ex.sellerId, exchangeId: ex.id, name: ex.sellerName })}
+                            className="text-sm bg-yellow-100 text-yellow-700 px-3 py-1 rounded hover:bg-yellow-200 font-bold"
+                        >
+                            ★ Calificar
+                        </button>
+                    </div>
+                )}
               </div>
             );
           })}
@@ -96,6 +141,53 @@ const ExchangesPage = () => {
           </Link>
         </div>
       )}
+
+    {ratingModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+                <h3 className="font-bold text-xl text-gray-800 mb-4">Calificar a {ratingModal.name}</h3>
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tu Calificación</label>
+                    <div className="flex gap-1 text-2xl">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <span 
+                                key={star}
+                                className={`cursor-pointer ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                onClick={() => setRating(star)}
+                            >
+                                ★
+                            </span>
+                        ))}
+                    </div>
+                </div>
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Comentario (opcional)</label>
+                    <textarea
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none"
+                        rows={3}
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Comparte tu experiencia..."
+                    ></textarea>
+                </div>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => { setRatingModal(null); setRating(0); setComment(''); }}
+                        className="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        onClick={handleSubmitReview}
+                        disabled={submittingReview}
+                        className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md disabled:bg-gray-300 disabled:shadow-none"
+                    >
+                        {submittingReview ? 'Enviando...' : 'Enviar Calificación'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )}
     </div>
   );
 };

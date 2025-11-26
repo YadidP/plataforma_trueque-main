@@ -2,12 +2,15 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Enums lógicos como CHECKs para evitar conflictos con TypeORM
+-- 1. AGREGAR BIO A USERS (Si no existe, ejecutar alter o recrear tabla)
+-- Como estamos en dev, mejor modificar la definición de tabla directamente:
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (role IN ('usuario','emprendedor','ong','admin')),
+  bio TEXT, -- NUEVO CAMPO
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -24,12 +27,13 @@ CREATE TABLE IF NOT EXISTS entrepreneur_profiles (
    created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- NUEVA TABLA: Tipos de suscripción
+-- 2. MODIFICAR SUBSCRIPTIONS PARA PRIORIDAD
 CREATE TABLE IF NOT EXISTS subscriptions (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     price_bs NUMERIC(10, 2) NOT NULL,
     duration_days INTEGER NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 0, -- NUEVO: 0=Gratis, 1=Pro, 2=Leader
     description TEXT
 );
 
@@ -203,3 +207,16 @@ CREATE TABLE IF NOT EXISTS exchange_impacts (
 
 CREATE INDEX IF NOT EXISTS idx_exchange_impacts_exchange ON exchange_impacts(exchange_id);
 CREATE INDEX IF NOT EXISTS idx_exchange_impacts_metric ON exchange_impacts(metric_code);
+
+-- 3. NUEVA TABLA DE RESEÑAS
+CREATE TABLE IF NOT EXISTS reviews (
+    id SERIAL PRIMARY KEY,
+    reviewer_id INT NOT NULL REFERENCES users(id),
+    target_id INT NOT NULL REFERENCES users(id),
+    exchange_id BIGINT NOT NULL REFERENCES exchanges(id),
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(reviewer_id, exchange_id) -- Solo 1 reseña por intercambio
+);
+CREATE INDEX IF NOT EXISTS idx_reviews_target ON reviews(target_id);

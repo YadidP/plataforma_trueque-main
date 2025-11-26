@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useCallback, ReactNode } from 'react';
 
 type NotificationType = 'success' | 'error' | 'info';
@@ -18,30 +17,43 @@ export const NotificationContext = createContext<NotificationContextType | undef
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
+  const removeNotification = useCallback((id: number) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
   const addNotification = useCallback((message: string, type: NotificationType) => {
     const id = Date.now();
     setNotifications(prev => [...prev, { id, message, type }]);
+    // Auto cerrar después de 5 segundos
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 5000);
   }, []);
 
-  const notificationColors = {
-    success: 'bg-green-primary border-green-dark',
-    error: 'bg-red-600 border-red-800',
-    info: 'bg-blue-600 border-blue-800',
+  const getStyles = (type: NotificationType) => {
+    switch (type) {
+      case 'success': return 'bg-green-600 text-white border-green-700';
+      case 'error': return 'bg-red-600 text-white border-red-700';
+      default: return 'bg-blue-600 text-white border-blue-700';
+    }
   };
 
   return (
     <NotificationContext.Provider value={{ addNotification }}>
       {children}
-      <div className="fixed top-5 right-5 z-50 space-y-3">
+      <div className="fixed top-20 right-5 z-50 flex flex-col gap-3 max-w-sm w-full">
         {notifications.map(notification => (
           <div
             key={notification.id}
-            className={`px-6 py-4 rounded-lg text-white shadow-lg border-l-4 ${notificationColors[notification.type]}`}
+            className={`flex items-center justify-between px-4 py-3 rounded-lg shadow-xl border-l-4 transform transition-all duration-300 hover:scale-102 animate-in slide-in-from-right fade-in ${getStyles(notification.type)}`}
           >
-            {notification.message}
+            <span className="font-medium text-sm">{notification.message}</span>
+            <button
+              onClick={() => removeNotification(notification.id)}
+              className="ml-4 text-white/80 hover:text-white focus:outline-none font-bold text-lg"
+            >
+              &times;
+            </button>
           </div>
         ))}
       </div>

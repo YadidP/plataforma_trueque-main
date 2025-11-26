@@ -219,6 +219,22 @@ export const getPublicationsVsExchanges = async (params: DateRangeParams = {}): 
   return response.data;
 };
 
+// --- USER PROFILES & REVIEWS ---
+export const getUserProfile = async (id: number): Promise<any> => {
+  const response = await http.get(`/users/profile/${id}`);
+  return response.data;
+};
+
+export const updateBio = async (bio: string): Promise<any> => {
+  const response = await http.put('/users/profile', { bio });
+  return response.data;
+};
+
+export const rateUser = async (data: { targetId: number, exchangeId: number, rating: number, comment: string }): Promise<any> => {
+  const response = await http.post('/users/rate', data);
+  return response.data;
+};
+
 // Agregar al final o donde están las de créditos
 export const getMySubscription = async (): Promise<any> => {
   const response = await http.get('/credits/my-subscription');

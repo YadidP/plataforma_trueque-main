@@ -1,13 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+// Añadir imports necesarios
+import { Controller, Get, Put, Post, Body, Param, Req, UseGuards, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 
-@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-  // Los endpoints de usuario se podrían añadir aquí, protegidos con guardas.
-  // Por ahora, la creación se maneja en auth/register.
+
+  @Get('profile/:id')
+  getProfile(@Param('id') id: string) {
+    return this.usersService.getPublicProfile(+id);
+  }
+
+  @Put('profile')
+  @UseGuards(AuthenticatedGuard)
+  updateProfile(@Req() req, @Body() body: { bio: string }) {
+    return this.usersService.updateBio(req.session.user.id, body.bio);
+  }
+
+  @Post('rate')
+  @UseGuards(AuthenticatedGuard)
+  rateUser(@Req() req, @Body() body: { targetId: number, exchangeId: number, rating: number, comment: string }) {
+    return this.usersService.addReview(req.session.user.id, body);
+  }
 }
