@@ -200,9 +200,22 @@ export const getAdminImpactData = async (startDate: string, endDate: string, met
   return response.data;
 };
 
-// --- CLAIMS (User) ---
+// --- CLAIMS & MODERATION ---
 export const createClaim = async (data: { exchangeId?: number; listingId?: number; reason: string }): Promise<void> => {
   await http.post('/claims', data);
+};
+
+export const getActiveClaims = async (): Promise<any[]> => {
+  const response = await http.get('/claims/active');
+  return response.data;
+};
+
+export const resolveClaim = async (claimId: number, data: { 
+    action: 'dismiss' | 'delete_listing', 
+    adminMessage: string, 
+    sanctionType: 'none' | 'temp_ban' | 'perm_ban' 
+}): Promise<void> => {
+  await http.post(`/claims/${claimId}/resolve`, data);
 };
 
 // --- USER PROFILES & REVIEWS ---

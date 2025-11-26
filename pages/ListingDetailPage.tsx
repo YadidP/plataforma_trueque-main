@@ -82,7 +82,23 @@ const ListingDetailPage = () => {
     }
   };
 
-  // ... (handleReport se mantiene igual)
+  const handleReport = async () => {
+      if (!reportReason.trim()) return addNotification('Escribe un motivo.', 'error');
+      setReportLoading(true);
+      try {
+          await api.createClaim({
+              listingId: listing?.id,
+              reason: reportReason
+          });
+          addNotification('Reporte enviado a administración.', 'success');
+          setIsReporting(false);
+          setReportReason('');
+      } catch (error) {
+          addNotification('Error al enviar reporte.', 'error');
+      } finally {
+          setReportLoading(false);
+      }
+  };
 
   if (loading) return <Spinner />;
   if (!listing) return <p className="text-center">Cargando...</p>;
@@ -344,21 +360,37 @@ const ListingDetailPage = () => {
         </div>
       )}
       
-      {/* Modal de Reporte (básico) */}
+      {/* Modal de Reporte */}
       {isReporting && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-xl shadow-lg w-96">
-                <h3 className="font-bold text-lg mb-2 text-red-600">Reportar Publicación</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in">
+                <h3 className="font-bold text-xl mb-4 text-red-600 flex items-center gap-2">
+                    <span>⚠️</span> Reportar Publicación
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                    Ayúdanos a mantener la comunidad segura. Describe por qué este contenido es inapropiado.
+                </p>
                 <textarea 
-                    className="w-full border p-2 rounded mb-4" 
-                    rows={3} 
-                    placeholder="Describe el problema..."
+                    className="w-full border border-gray-300 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-red-500 outline-none resize-none" 
+                    rows={4} 
+                    placeholder="Ej: Contenido ofensivo, producto ilegal, estafa..."
                     value={reportReason}
                     onChange={e => setReportReason(e.target.value)}
                 ></textarea>
-                <div className="flex justify-end gap-2">
-                    <button onClick={() => setIsReporting(false)} className="text-gray-500 px-3">Cancelar</button>
-                    <button onClick={handleReport} className="bg-red-600 text-white px-4 py-2 rounded">Enviar</button>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setIsReporting(false)} 
+                        className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        onClick={handleReport} 
+                        disabled={reportLoading}
+                        className="flex-1 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 shadow-md disabled:bg-gray-400"
+                    >
+                        {reportLoading ? 'Enviando...' : 'Enviar Reporte'}
+                    </button>
                 </div>
             </div>
         </div>

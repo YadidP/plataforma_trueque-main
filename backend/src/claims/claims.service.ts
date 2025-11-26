@@ -1,130 +1,125 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PgService } from 'src/database/pg.service'; // Import PgService
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { PgService } from 'src/database/pg.service';
 import { CreateClaimDto } from './dto/create-claim.dto';
-import { ClaimDetailDto } from './dto/claim-detail.dto'; // Assuming this DTO is still needed for output structure
+import { ResolveClaimDto } from './dto/resolve-claim.dto'; // Asegúrate de importar esto
+import { ClaimDetailDto } from './dto/claim-detail.dto';
 
 @Injectable()
 export class ClaimsService {
-    constructor(
-        private readonly pgService: PgService, // Inject PgService
-    ) { }
+    constructor(private readonly pgService: PgService) { }
 
-    async create(userId: number, createClaimDto: CreateClaimDto): Promise<any> { // Return type changed to any
-        if (!createClaimDto.exchangeId && !createClaimDto.listingId) {
-            throw new BadRequestException('Must provide either exchangeId or listingId');
+    async create(userId: number, createClaimDto: CreateClaimDto) {
+        // Validar que no se denuncie lo propio
+        if (createClaimDto.listingId) {
+            const listing = await this.pgService.query('SELECT author_id FROM listings WHERE id = $1', [createClaimDto.listingId]);
+            if (listing.rows[0]?.author_id === userId) {
+                throw new BadRequestException('No puedes reportar tu propia publicación.');
+            }
         }
 
         const query = `
             INSERT INTO claims (exchange_id, listing_id, claimant_id, reason, status, created_at)
-            VALUES ($1, $2, $3, $4, $5, NOW())
-            RETURNING id, exchange_id as "exchangeId", listing_id as "listingId", claimant_id as "claimantId", reason, status, created_at as "createdAt", resolved_at as "resolvedAt";
+            VALUES ($1, $2, $3, $4, 'abierto', NOW())
+            RETURNING id;
         `;
         const values = [
             createClaimDto.exchangeId || null,
             createClaimDto.listingId || null,
             userId,
             createClaimDto.reason,
-            'abierto',
         ];
         const result = await this.pgService.query(query, values);
         return result.rows[0];
     }
 
-    // Admin methods
-    async findAll(): Promise<ClaimDetailDto[]> {
-        const query = `
-            SELECT
-                c.id, c.exchange_id as "exchangeId", c.listing_id as "listingId",
-                c.claimant_id as "claimantId", c.reason, c.status,
-                c.created_at as "createdAt", c.resolved_at as "resolvedAt",
-                u.name as claimant_name,
-                e.id as exchange_id, l_e.title as exchange_listing_title,
-                ub.name as exchange_buyer_name, us.name as exchange_seller_name,
-                l.id as listing_id, l.title as listing_title, ua.name as listing_author_name
-            FROM claims c
-            JOIN users u ON c.claimant_id = u.id
-            LEFT JOIN exchanges e ON c.exchange_id = e.id
-            LEFT JOIN listings l_e ON e.listing_id = l_e.id
-            LEFT JOIN users ub ON e.buyer_id = ub.id
-            LEFT JOIN users us ON e.seller_id = us.id
-            LEFT JOIN listings l ON c.listing_id = l.id
-            LEFT JOIN users ua ON l.author_id = ua.id
-            ORDER BY c.created_at DESC;
-        `;
-        const result = await this.pgService.query(query);
-        return result.rows.map(row => this.mapToDetailDto(row));
-    }
-
+    // Obtener reportes pendientes para el Admin
     async findActiveClaims(): Promise<ClaimDetailDto[]> {
         const query = `
             SELECT
                 c.id, c.exchange_id as "exchangeId", c.listing_id as "listingId",
                 c.claimant_id as "claimantId", c.reason, c.status,
-                c.created_at as "createdAt", c.resolved_at as "resolvedAt",
+                c.created_at as "createdAt",
                 u.name as claimant_name,
-                e.id as exchange_id, l_e.title as exchange_listing_title,
-                ub.name as exchange_buyer_name, us.name as exchange_seller_name,
-                l.id as listing_id, l.title as listing_title, ua.name as listing_author_name
+                l.title as listing_title, l.author_id as reported_user_id, ua.name as reported_user_name
             FROM claims c
             JOIN users u ON c.claimant_id = u.id
-            LEFT JOIN exchanges e ON c.exchange_id = e.id
-            LEFT JOIN listings l_e ON e.listing_id = l_e.id
-            LEFT JOIN users ub ON e.buyer_id = ub.id
-            LEFT JOIN users us ON e.seller_id = us.id
             LEFT JOIN listings l ON c.listing_id = l.id
             LEFT JOIN users ua ON l.author_id = ua.id
             WHERE c.status IN ('abierto', 'en_revision')
             ORDER BY c.created_at DESC;
         `;
         const result = await this.pgService.query(query);
-        return result.rows.map(row => this.mapToDetailDto(row));
+        
+        // Mapeo simple para el frontend
+        return result.rows.map(r => ({
+            ...r,
+            listingDetails: r.listingId ? { id: r.listingId, title: r.listing_title, authorName: r.reported_user_name, authorId: r.reported_user_id } : null
+        }));
     }
 
-    async resolveClaim(claimId: number): Promise<any> { // Return type changed to any
-        const query = `
-            UPDATE claims
-            SET status = 'resuelto', resolved_at = NOW()
-            WHERE id = $1
-            RETURNING id, exchange_id as "exchangeId", listing_id as "listingId", claimant_id as "claimantId", reason, status, created_at as "createdAt", resolved_at as "resolvedAt";
-        `;
-        const result = await this.pgService.query(query, [claimId]);
+    // LÓGICA PRINCIPAL: RESOLUCIÓN Y SANCIÓN
+    async resolveClaim(claimId: number, dto: ResolveClaimDto) {
+        const client = await this.pgService['pool'].connect(); // Acceso directo al pool para transacción
+        try {
+            await client.query('BEGIN');
 
-        if (result.rows.length === 0) {
-            throw new NotFoundException(`Claim with ID ${claimId} not found`);
+            // 1. Obtener info del reclamo
+            const claimRes = await client.query('SELECT * FROM claims WHERE id = $1', [claimId]);
+            const claim = claimRes.rows[0];
+            if (!claim) throw new NotFoundException('Reclamo no encontrado');
+
+            // 2. Ejecutar acción sobre la publicación
+            if (dto.action === 'delete_listing' && claim.listing_id) {
+                await client.query("UPDATE listings SET status = 'eliminada' WHERE id = $1", [claim.listing_id]);
+            }
+
+            // 3. Aplicar sanción al usuario (si corresponde)
+            if (dto.sanctionType !== 'none') {
+                // Necesitamos el ID del autor reportado. 
+                const listRes = await client.query('SELECT author_id FROM listings WHERE id = $1', [claim.listing_id]);
+                const targetUserId = listRes.rows[0]?.author_id;
+
+                if (targetUserId) {
+                    let bannedUntil = null;
+                    if (dto.sanctionType === 'temp_ban') {
+                        // Ban de 7 días
+                        bannedUntil = new Date();
+                        bannedUntil.setDate(bannedUntil.getDate() + 7);
+                    }
+                    // Si es perm_ban, bannedUntil se queda null (o fecha muy lejana), usaremos is_banned = true
+
+                    await client.query(`
+                        UPDATE users 
+                        SET is_banned = true, 
+                            banned_until = $1, 
+                            ban_reason = $2 
+                        WHERE id = $3
+                    `, [bannedUntil, dto.adminMessage, targetUserId]);
+                }
+            }
+
+            // 4. Cerrar el reclamo
+            await client.query(`
+                UPDATE claims 
+                SET status = 'resuelto', 
+                    resolved_at = NOW() 
+                WHERE id = $1
+            `, [claimId]);
+
+            // Aquí podrías insertar en una tabla 'notifications' para avisar al usuario.
+
+            await client.query('COMMIT');
+            return { message: 'Reclamo resuelto y acciones aplicadas.' };
+
+        } catch (e) {
+            await client.query('ROLLBACK');
+            console.error(e);
+            throw new InternalServerErrorException('Error procesando la resolución');
+        } finally {
+            client.release();
         }
-        return result.rows[0];
     }
-
-    private mapToDetailDto(row: any): ClaimDetailDto {
-        const dto: ClaimDetailDto = {
-            id: row.id,
-            exchangeId: row.exchangeId,
-            listingId: row.listingId,
-            claimantId: row.claimantId,
-            claimantName: row.claimant_name || 'Usuario desconocido',
-            reason: row.reason,
-            status: row.status,
-            createdAt: row.createdAt,
-            resolvedAt: row.resolvedAt,
-        };
-
-        if (row.exchange_id) {
-            dto.exchangeDetails = {
-                id: row.exchange_id,
-                listingTitle: row.exchange_listing_title || 'Sin título',
-                buyerName: row.exchange_buyer_name || 'Desconocido',
-                sellerName: row.exchange_seller_name || 'Desconocido',
-            };
-        }
-
-        if (row.listing_id) {
-            dto.listingDetails = {
-                id: row.listing_id,
-                title: row.listing_title,
-                authorName: row.listing_author_name || 'Desconocido',
-            };
-        }
-
-        return dto;
-    }
+    
+    // Método dummy para cumplir con la interfaz del controller anterior si fuera necesario
+    async findAll() { return []; }
 }

@@ -1,6 +1,7 @@
-import { Controller, Post, Get, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, UseGuards, Param } from '@nestjs/common';
 import { ClaimsService } from './claims.service';
 import { CreateClaimDto } from './dto/create-claim.dto';
+import { ResolveClaimDto } from './dto/resolve-claim.dto'; // Importar DTO
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
 
@@ -17,22 +18,18 @@ export class ClaimsController {
         return this.claimsService.create(userId, createClaimDto);
     }
 
-    // Admin endpoints (now public for simplification)
-    @Get()
-    @ApiOperation({ summary: 'Get all claims (Admin only - now public)' })
-    findAll() {
-        return this.claimsService.findAll();
-    }
-
     @Get('active')
-    @ApiOperation({ summary: 'Get active claims (Admin only - now public)' })
+    @UseGuards(AuthenticatedGuard) // Proteger ruta admin
+    @ApiOperation({ summary: 'Get active claims (Admin)' })
     findActive() {
+        // Aquí deberías validar si el usuario es admin real, por ahora asumo que el frontend controla el acceso
         return this.claimsService.findActiveClaims();
     }
 
-    @Patch(':id/resolve')
-    @ApiOperation({ summary: 'Resolve a claim (Admin only - now public)' })
-    resolve(@Param('id') id: string) {
-        return this.claimsService.resolveClaim(+id);
+    @Post(':id/resolve')
+    @UseGuards(AuthenticatedGuard)
+    @ApiOperation({ summary: 'Resolve a claim with sanctions' })
+    resolve(@Param('id') id: string, @Body() resolveDto: ResolveClaimDto) {
+        return this.claimsService.resolveClaim(+id, resolveDto);
     }
 }

@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(100) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (role IN ('usuario','emprendedor','ong','admin')),
-  bio TEXT, -- NUEVO CAMPO
+  bio TEXT,
+  is_banned BOOLEAN DEFAULT FALSE,
+  banned_until TIMESTAMPTZ,
+  ban_reason TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -111,7 +114,7 @@ CREATE TABLE IF NOT EXISTS listings (
   unit_credits NUMERIC(10,2) NOT NULL,
   unit_label VARCHAR(50),
   image_url VARCHAR(255),
-  status VARCHAR(20) NOT NULL DEFAULT 'activa' CHECK (status IN ('activa','intercambiada','pausada')),
+  status VARCHAR(20) NOT NULL DEFAULT 'activa' CHECK (status IN ('activa','intercambiada','pausada', 'eliminada')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_listings_author_id ON listings(author_id);
