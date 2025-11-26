@@ -114,4 +114,24 @@ export class AdminService {
             }))
         };
     }
+
+    // MÓDULO 4: IMPACTO AMBIENTAL
+    async getImpactData(startDate: string, endDate: string) {
+        const [totalsRes, catRes] = await Promise.all([
+            this.pgService.query('SELECT * FROM fn_chart_impact_totals($1, $2)', [startDate, endDate]),
+            this.pgService.query('SELECT * FROM fn_chart_impact_by_category($1, $2)', [startDate, endDate])
+        ]);
+
+        return {
+            totals: totalsRes.rows.map(r => ({
+                ...r,
+                total_value: Number(r.total_value)
+            })),
+            byCategory: catRes.rows.map(r => ({
+                category_name: r.category_name,
+                potential_co2: Number(r.potential_co2),
+                real_co2: Number(r.real_co2)
+            }))
+        };
+    }
 }

@@ -220,3 +220,45 @@ INSERT INTO user_subscriptions (user_id, subscription_id, start_date, end_date, 
 SELECT u.id, s.id, NOW(), NOW() + INTERVAL '10 years', TRUE
 FROM users u, subscriptions s
 WHERE s.name='Gratuito' AND u.id NOT IN (SELECT user_id FROM user_subscriptions WHERE is_active = true AND end_date > NOW());
+-- ... (después de insertar los intercambios o al final del archivo)
+
+-- 7. GENERAR INTERCAMBIOS DE PRUEBA Y SU IMPACTO
+-- (Esto es necesario para que el Dashboard Admin Módulo 4 no salga vacío)
+
+DO $$
+DECLARE
+    v_ana_id INT := (SELECT id FROM users WHERE email = 'ana@email.com');
+    v_carlos_id INT := (SELECT id FROM users WHERE email = 'carlos@email.com');
+    v_listing_id INT;
+    v_exchange_id BIGINT;
+    v_material_id INT;
+BEGIN
+    -- Intercambio 1: Carlos compra Sillas (Madera) a Ana
+    SELECT id, material_id INTO v_listing_id, v_material_id FROM listings WHERE title = 'Sillas de Roble';
+    
+    IF NOT EXISTS (SELECT 1 FROM exchanges WHERE listing_id = v_listing_id) THEN
+        INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, exchange_date)
+        VALUES (v_listing_id, v_carlos_id, v_ana_id, 4, 50, 200, NOW() - INTERVAL '5 days')
+        RETURNING id INTO v_exchange_id;
+
+        -- Insertar Impacto (Madera: CO2, Arboles)
+        INSERT INTO exchange_impacts (exchange_id, metric_code, metric_name, metric_unit, impact_value) VALUES
+        (v_exchange_id, 'CO2', 'Huella de Carbono', 'kg', 4 * 1.5),
+        (v_exchange_id, 'TREES', 'Árboles Equivalentes', 'árboles', (4 / 100.0) * 1);
+    END IF;
+
+    -- Intercambio 2: Ana compra Smartphone (Electrónicos) a Carlos
+    SELECT id, material_id INTO v_listing_id, v_material_id FROM listings WHERE title = 'Smartphone Android Usado';
+    
+    IF NOT EXISTS (SELECT 1 FROM exchanges WHERE listing_id = v_listing_id) THEN
+        INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, exchange_date)
+        VALUES (v_listing_id, v_ana_id, v_carlos_id, 1, 100, 100, NOW() - INTERVAL '10 days')
+        RETURNING id INTO v_exchange_id;
+
+        -- Insertar Impacto (Electrónicos: CO2, Waste, Energy)
+        INSERT INTO exchange_impacts (exchange_id, metric_code, metric_name, metric_unit, impact_value) VALUES
+        (v_exchange_id, 'CO2', 'Huella de Carbono', 'kg', 1 * 50.0),
+        (v_exchange_id, 'WASTE', 'Residuos Evitados', 'kg', 1 * 0.5),
+        (v_exchange_id, 'ENERGY', 'Energía Ahorrada', 'kWh', 1 * 50);
+    END IF;
+END $$;

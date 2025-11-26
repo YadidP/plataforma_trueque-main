@@ -23,6 +23,7 @@ const AdminPage = () => {
     const [kpiData, setKpiData] = useState<any>(null);
     const [dynamicsData, setDynamicsData] = useState<any>(null);
     const [economyData, setEconomyData] = useState<any>(null);
+    const [impactData, setImpactData] = useState<any>(null); // NUEVO ESTADO
     const [loading, setLoading] = useState(true);
 
     // Filtros extra
@@ -38,14 +39,16 @@ const AdminPage = () => {
     const fetchAllData = async () => {
         setLoading(true);
         try {
-            const [kpi, dyn, eco] = await Promise.all([
+            const [kpi, dyn, eco, imp] = await Promise.all([
                 api.getAdminKpiSummary(dateRange.startDate, dateRange.endDate),
                 api.getAdminUserDynamics(dateRange.startDate, dateRange.endDate, roleFilter),
-                api.getAdminEconomyData(dateRange.startDate, dateRange.endDate)
+                api.getAdminEconomyData(dateRange.startDate, dateRange.endDate),
+                api.getAdminImpactData(dateRange.startDate, dateRange.endDate) // NUEVO
             ]);
             setKpiData(kpi);
             setDynamicsData(dyn);
             setEconomyData(eco);
+            setImpactData(imp);
         } catch (error: any) {
             console.error("Error cargando datos:", error);
             if (error.response && (error.response.status === 403 || error.response.status === 401)) {
@@ -360,6 +363,85 @@ const AdminPage = () => {
                                 </table>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* ========================== MÓDULO 4: IMPACTO AMBIENTAL ========================== */}
+                <div className="mb-10">
+                    <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <span className="bg-green-100 text-green-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">4</span>
+                            Impacto Ambiental Detallado
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                        {/* Gráfico 1: Métricas Totales */}
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <h3 className="font-bold text-gray-700 mb-4 text-center">Resumen de Ahorro Ambiental</h3>
+                            <div className="h-80 w-full">
+                                {impactData?.totals && impactData.totals.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={impactData.totals} layout="vertical" margin={{ left: 40, right: 20 }}>
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                            <XAxis type="number" />
+                                            <YAxis 
+                                                type="category" 
+                                                dataKey="metric_name" 
+                                                width={110} 
+                                                tick={{fontSize: 11, fill: '#6b7280'}} 
+                                            />
+                                            <Tooltip 
+                                                formatter={(value: number, name: string, props: any) => [`${value} ${props.payload.metric_unit}`, 'Ahorrado']}
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                            />
+                                            <Bar dataKey="total_value" radius={[0, 4, 4, 0]} barSize={25}>
+                                                {
+                                                    impactData.totals.map((entry: any, index: number) => (
+                                                        <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#eab308', '#a855f7', '#f97316'][index % 5]} />
+                                                    ))
+                                                }
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                        <span className="text-3xl mb-2">📉</span>
+                                        <p>No hay datos de impacto en este periodo.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Gráfico 2: Comparativa por Categoría */}
+                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <h3 className="font-bold text-gray-700 mb-4 text-center">Huella de Carbono (CO2): Potencial vs Real</h3>
+                            <div className="h-80 w-full">
+                                {impactData?.byCategory && impactData.byCategory.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={impactData.byCategory} margin={{ top: 20 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis dataKey="category_name" tick={{fontSize: 11}} />
+                                            <YAxis label={{ value: 'kg CO2', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px' }} />
+                                            <Legend verticalAlign="top" height={36} iconType="circle"/>
+                                            <Bar dataKey="potential_co2" name="Potencial (Publicado)" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
+                                            <Bar dataKey="real_co2" name="Real (Vendido)" fill="#16a34a" radius={[4, 4, 0, 0]} barSize={20} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                        <span className="text-3xl mb-2">🌱</span>
+                                        <p>Sin actividad de CO2 registrada.</p>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-xs text-gray-500 text-center mt-4">
+                                Compara el impacto de lo publicado vs lo efectivamente intercambiado.
+                            </p>
+                        </div>
+
                     </div>
                 </div>
 

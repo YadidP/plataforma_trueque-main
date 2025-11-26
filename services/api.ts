@@ -195,6 +195,11 @@ export const getAdminEconomyData = async (startDate: string, endDate: string) =>
   return response.data;
 };
 
+export const getAdminImpactData = async (startDate: string, endDate: string) => {
+  const response = await http.get('/admin/charts/impact', { params: { startDate, endDate } });
+  return response.data;
+};
+
 // --- CLAIMS (User) ---
 export const createClaim = async (data: { exchangeId?: number; listingId?: number; reason: string }): Promise<void> => {
   await http.post('/claims', data);
