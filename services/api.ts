@@ -239,3 +239,24 @@ export const getMySubscription = async (): Promise<any> => {
   const response = await http.get('/credits/my-subscription');
   return response.data;
 };
+
+// --- CAMPAIGNS ---
+export const getCampaigns = async (): Promise<any[]> => {
+  const response = await http.get('/campaigns');
+  return response.data;
+};
+
+export const createCampaign = async (data: any): Promise<any> => {
+  const response = await http.post('/campaigns', data);
+  return response.data;
+};
+
+export const rewardUserManual = async (campaignId: number, userEmail: string): Promise<any> => {
+  const response = await http.post('/campaigns/reward/manual', { campaignId, userEmail });
+  return response.data;
+};
+
+export const claimCampaignReward = async (campaignId: number): Promise<any> => {
+  const response = await http.post(`/campaigns/${campaignId}/claim`, {});
+  return response.data;
+};

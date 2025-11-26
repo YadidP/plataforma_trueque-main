@@ -18,6 +18,7 @@ import { ImpactModule } from './impact/impact.module';
 import { MaterialsModule } from './materials/materials.module';
 import { ClaimsModule } from './claims/claims.module';
 import { AuthModule } from './auth/auth.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { AuthModule } from './auth/auth.module';
     ImpactModule,
     MaterialsModule,
     ClaimsModule,
+    CampaignsModule,
   ],
 })
 export class AppModule { }

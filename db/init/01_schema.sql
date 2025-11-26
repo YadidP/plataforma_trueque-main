@@ -187,7 +187,8 @@ CREATE TABLE IF NOT EXISTS impact_daily (
 -- Tabla para gestionar reclamos sobre intercambios
 CREATE TABLE IF NOT EXISTS claims (
     id SERIAL PRIMARY KEY,
-    exchange_id BIGINT NOT NULL REFERENCES exchanges(id),
+    exchange_id BIGINT REFERENCES exchanges(id), -- Puede ser NULL si la denuncia es a una publicación directamente
+    listing_id INT REFERENCES listings(id), -- NUEVO: Para denunciar directamente una publicación
     claimant_id INT NOT NULL REFERENCES users(id), -- Quien hace el reclamo
     reason TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'abierto' CHECK (status IN ('abierto', 'en_revision', 'resuelto', 'cerrado')),
@@ -223,3 +224,37 @@ CREATE TABLE IF NOT EXISTS reviews (
     UNIQUE(reviewer_id, exchange_id) -- Solo 1 reseña por intercambio
 );
 CREATE INDEX IF NOT EXISTS idx_reviews_target ON reviews(target_id);
+
+-- TIPOS DE CAMPAÑA
+-- 'manual': El emprendedor paga manualmente al usuario (ej. trajo botellas).
+-- 'metrica': El sistema paga si el usuario alcanza X impacto (ej. 100kg CO2).
+
+CREATE TABLE IF NOT EXISTS campaigns (
+    id SERIAL PRIMARY KEY,
+    entrepreneur_id INT NOT NULL REFERENCES users(id),
+    title VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('manual', 'metrica')),
+    
+    -- Configuración para campañas automáticas por métrica
+    target_metric_code VARCHAR(50), -- ej: 'CO2', 'WATER' (NULL si es manual)
+    target_value NUMERIC(10,2),     -- ej: 100 (NULL si es manual)
+    
+    reward_credits NUMERIC(10,2) NOT NULL, -- Cuánto paga
+    start_date DATE DEFAULT CURRENT_DATE,
+    end_date DATE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_campaigns_entrepreneur ON campaigns(entrepreneur_id);
+
+-- REGISTRO DE PARTICIPACIÓN (Evitar doble cobro en automáticas y log en manuales)
+CREATE TABLE IF NOT EXISTS campaign_participants (
+    id SERIAL PRIMARY KEY,
+    campaign_id INT NOT NULL REFERENCES campaigns(id),
+    user_id INT NOT NULL REFERENCES users(id),
+    rewarded_credits NUMERIC(10,2) NOT NULL,
+    rewarded_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(campaign_id, user_id) -- Un usuario solo cobra una vez por campaña
+);
