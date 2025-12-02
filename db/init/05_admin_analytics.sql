@@ -25,12 +25,13 @@ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION fn_admin_kpi_operations(p_start DATE, p_end DATE)
-RETURNS TABLE (total_listings BIGINT, total_exchanges BIGINT, exchanged_volume BIGINT) AS $$
+RETURNS TABLE (total_listings BIGINT, total_exchanges BIGINT, exchanged_volume BIGINT, total_claims BIGINT) AS $$
 BEGIN
     RETURN QUERY SELECT
         (SELECT COUNT(*) FROM listings WHERE created_at::date BETWEEN p_start AND p_end),
         (SELECT COUNT(*) FROM exchanges WHERE exchange_date::date BETWEEN p_start AND p_end),
-        (SELECT COALESCE(SUM(quantity), 0) FROM exchanges WHERE exchange_date::date BETWEEN p_start AND p_end);
+        (SELECT COALESCE(SUM(quantity), 0) FROM exchanges WHERE exchange_date::date BETWEEN p_start AND p_end),
+        (SELECT COUNT(*) FROM claims WHERE created_at::date BETWEEN p_start AND p_end); -- Nuevo indicador
 END; $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE VIEW view_admin_users_list AS

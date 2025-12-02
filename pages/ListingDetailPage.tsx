@@ -15,9 +15,6 @@ const ListingDetailPage = () => {
   const [exchangeLoading, setExchangeLoading] = useState(false);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isReporting, setIsReporting] = useState(false);
-  const [reportReason, setReportReason] = useState('');
-  const [reportLoading, setReportLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
   const { user, isAuthenticated } = useAuth();
@@ -82,8 +79,6 @@ const ListingDetailPage = () => {
     }
   };
 
-  // ... (handleReport se mantiene igual)
-
   if (loading) return <Spinner />;
   if (!listing) return <p className="text-center">Cargando...</p>;
 
@@ -118,8 +113,6 @@ const ListingDetailPage = () => {
   };
 
   // Calcular impacto proporcional a la cantidad seleccionada
-  // listing.potentialImpact suele ser el total por toda la cantidad disponible o unitario dependiendo de tu implementación.
-  // Asumiremos que el backend devolvió el cálculo basado en listing.quantity total.
   const calculateImpactForSelection = (metric: ImpactMetricResult) => {
     if (!listing.quantity) return 0;
     const unitImpact = metric.value / listing.quantity;
@@ -166,7 +159,7 @@ const ListingDetailPage = () => {
               <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{categoryName}</span>
               <span className="text-xs text-gray-400">{new Date(listing.createdAt).toLocaleDateString()}</span>
             </div>
-            
+
             <h1 className="text-3xl font-extrabold text-gray-900 mt-3 mb-2 leading-tight">{listing.title}</h1>
             <p className="text-sm text-gray-500 mb-6 flex items-center gap-2">
               Publicado por <span className="font-semibold text-gray-700 flex items-center gap-1">👤 {listing.author?.name}</span>
@@ -214,7 +207,7 @@ const ListingDetailPage = () => {
                     Intercambiar Ahora
                   </button>
                   <button
-                    onClick={() => setIsReporting(true)}
+                    onClick={() => navigate(`/claims/new?listingId=${listing.id}`)}
                     className="px-4 py-3 border border-gray-200 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
                     title="Reportar"
                   >
@@ -247,7 +240,7 @@ const ListingDetailPage = () => {
               <h2 className="text-xl font-bold flex items-center gap-2">🤝 Confirmar Trueque</h2>
               <button onClick={() => setIsConfirming(false)} className="text-white/80 hover:text-white text-2xl">&times;</button>
             </div>
-            
+
             <div className="p-6">
               <div className="flex gap-4 mb-6">
                 <img src={images[0]?.imageUrl} className="w-20 h-20 object-cover rounded-lg bg-gray-100" />
@@ -320,47 +313,27 @@ const ListingDetailPage = () => {
                 <button onClick={() => setIsConfirming(false)} className="flex-1 py-3 border border-gray-300 rounded-xl text-gray-600 font-semibold hover:bg-gray-50">
                   Cancelar
                 </button>
-                
+
                 {/* Lógica condicional del botón */}
                 {(wallet?.balance || 0) < (listing.unitCredits * quantity) ? (
-                    <button 
-                        onClick={() => navigate('/wallet')}
-                        className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 shadow-md"
-                    >
-                        Recargar Billetera
-                    </button>
+                  <button
+                    onClick={() => navigate('/wallet')}
+                    className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 shadow-md"
+                  >
+                    Recargar Billetera
+                  </button>
                 ) : (
-                    <button 
-                        onClick={handleExchange} 
-                        disabled={exchangeLoading}
-                        className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md disabled:bg-gray-300"
-                    >
-                        {exchangeLoading ? 'Procesando...' : 'Confirmar Canje'}
-                    </button>
+                  <button
+                    onClick={handleExchange}
+                    disabled={exchangeLoading}
+                    className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-md disabled:bg-gray-300"
+                  >
+                    {exchangeLoading ? 'Procesando...' : 'Confirmar Canje'}
+                  </button>
                 )}
               </div>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* Modal de Reporte (básico) */}
-      {isReporting && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-xl shadow-lg w-96">
-                <h3 className="font-bold text-lg mb-2 text-red-600">Reportar Publicación</h3>
-                <textarea 
-                    className="w-full border p-2 rounded mb-4" 
-                    rows={3} 
-                    placeholder="Describe el problema..."
-                    value={reportReason}
-                    onChange={e => setReportReason(e.target.value)}
-                ></textarea>
-                <div className="flex justify-end gap-2">
-                    <button onClick={() => setIsReporting(false)} className="text-gray-500 px-3">Cancelar</button>
-                    <button onClick={handleReport} className="bg-red-600 text-white px-4 py-2 rounded">Enviar</button>
-                </div>
-            </div>
         </div>
       )}
     </div>

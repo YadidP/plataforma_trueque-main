@@ -16,7 +16,7 @@ export class AdminService {
         return {
             users: usersRes.rows[0],
             revenue: revenueRes.rows[0],
-            operations: opsRes.rows[0]
+            operations: opsRes.rows[0] // Esto ahora incluirá 'total_claims' automáticamente desde la BD
         };
     }
 

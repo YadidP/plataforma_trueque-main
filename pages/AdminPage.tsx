@@ -210,6 +210,18 @@ const AdminPage = () => {
                             <div className="flex justify-between"><span>Volumen:</span> <span className="font-bold">{kpiData?.operations?.exchanged_volume} u.</span></div>
                         </div>
                     </KpiCard>
+
+                    <KpiCard
+                        title="Reclamos"
+                        value={kpiData?.operations?.total_claims || 0}
+                        icon="⚠️"
+                        color="red"
+                        onClick={() => { }}
+                    >
+                        <div className="mt-3 pt-3 border-t border-red-100 text-xs text-gray-600">
+                            Reportes generados en el periodo.
+                        </div>
+                    </KpiCard>
                 </div>
 
                 {/* ========================== MÓDULO 2: DINÁMICA ========================== */}
@@ -529,6 +541,7 @@ const KpiCard = ({ title, value, icon, color, children, onClick }: any) => {
         green: 'bg-green-50 border-green-100 text-green-600',
         purple: 'bg-purple-50 border-purple-100 text-purple-600',
         orange: 'bg-orange-50 border-orange-100 text-orange-600',
+        red: 'bg-red-50 border-red-100 text-red-600',
     };
     return (
         <div className={`relative p-6 rounded-2xl border-2 ${colors[color]} hover:shadow-lg transition-shadow bg-white`}>

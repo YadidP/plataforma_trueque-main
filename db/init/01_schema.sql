@@ -184,15 +184,18 @@ CREATE TABLE IF NOT EXISTS impact_daily (
 -- Tabla para gestionar reclamos sobre intercambios
 CREATE TABLE IF NOT EXISTS claims (
     id SERIAL PRIMARY KEY,
-    exchange_id BIGINT NOT NULL REFERENCES exchanges(id),
-    claimant_id INT NOT NULL REFERENCES users(id), -- Quien hace el reclamo
+    exchange_id BIGINT REFERENCES exchanges(id), -- Ya no es NOT NULL
+    listing_id INTEGER REFERENCES listings(id),  -- Nuevo campo
+    claimant_id INT NOT NULL REFERENCES users(id),
     reason TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'abierto' CHECK (status IN ('abierto', 'en_revision', 'resuelto', 'cerrado')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    resolved_at TIMESTAMPTZ
+    resolved_at TIMESTAMPTZ,
+    CONSTRAINT chk_claim_target CHECK (exchange_id IS NOT NULL OR listing_id IS NOT NULL)
 );
 
 CREATE INDEX IF NOT EXISTS idx_claims_exchange_id ON claims(exchange_id);
+CREATE INDEX IF NOT EXISTS idx_claims_listing_id ON claims(listing_id); -- Nuevo índice
 CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
 -- Tabla para registrar impacto ambiental de cada intercambio
 CREATE TABLE IF NOT EXISTS exchange_impacts (
