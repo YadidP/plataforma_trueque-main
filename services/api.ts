@@ -205,6 +205,11 @@ export const createClaim = async (data: { exchangeId?: number; listingId?: numbe
   await http.post('/claims', data);
 };
 
+export const getAdminClaimsList = async () => {
+  const response = await http.get('/claims');
+  return response.data;
+};
+
 // --- USER PROFILES & REVIEWS ---
 export const getUserProfile = async (id: number): Promise<any> => {
   const response = await http.get(`/users/profile/${id}`);

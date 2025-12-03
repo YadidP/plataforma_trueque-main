@@ -49,31 +49,43 @@ const ClaimsPage = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Motivo del reporte</label>
-                        <select
-                            value={reasonType}
-                            onChange={(e) => setReasonType(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
-                        >
-                            <option value="inapropiado">Contenido Inapropiado / Ofensivo</option>
-                            <option value="fraude">Posible Fraude o Estafa</option>
-                            <option value="articulo_prohibido">Artículo Prohibido</option>
-                            <option value="spam">Spam / Publicidad</option>
-                            <option value="otro">Otro</option>
-                        </select>
+                        <label className="block text-sm font-bold text-gray-700 mb-4">Selecciona el motivo del reporte:</label>
+                        <div className="space-y-3">
+                            {[
+                                { value: 'inapropiado', label: 'Contenido Inapropiado / Ofensivo' },
+                                { value: 'fraude', label: 'Posible Fraude o Estafa' },
+                                { value: 'articulo_prohibido', label: 'Artículo Prohibido' },
+                                { value: 'spam', label: 'Spam / Publicidad' },
+                                { value: 'otro', label: 'Otro' }
+                            ].map((option) => (
+                                <label key={option.value} className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                                    <input
+                                        type="radio"
+                                        name="reason"
+                                        value={option.value}
+                                        checked={reasonType === option.value}
+                                        onChange={(e) => setReasonType(e.target.value)}
+                                        className="w-5 h-5 text-red-600 focus:ring-red-500 border-gray-300"
+                                    />
+                                    <span className="ml-3 text-gray-700 font-medium">{option.label}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Detalles adicionales</label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            required
-                            rows={4}
-                            placeholder="Por favor describe brevemente el problema..."
-                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
-                        ></textarea>
-                    </div>
+                    {reasonType === 'otro' && (
+                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Detalles del problema</label>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                required
+                                rows={4}
+                                placeholder="Por favor describe el problema..."
+                                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
+                            ></textarea>
+                        </div>
+                    )}
 
                     <div className="flex gap-4 pt-4">
                         <button

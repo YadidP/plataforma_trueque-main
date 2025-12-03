@@ -32,7 +32,7 @@ const AdminPage = () => {
 
     // 3. Estado del Modal de Detalles
     const [modalOpen, setModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<'users' | 'finance' | 'listings' | 'exchanges' | null>(null);
+    const [modalType, setModalType] = useState<'users' | 'finance' | 'listings' | 'exchanges' | 'claims' | null>(null);
     const [listData, setListData] = useState<any[]>([]);
     const [listLoading, setListLoading] = useState(false);
 
@@ -65,7 +65,7 @@ const AdminPage = () => {
     useEffect(() => { fetchAllData(); }, [dateRange.startDate, dateRange.endDate, roleFilter, impactMetric]);
 
     // Manejar apertura de listas detalladas
-    const openListModal = async (type: 'users' | 'finance' | 'listings' | 'exchanges') => {
+    const openListModal = async (type: 'users' | 'finance' | 'listings' | 'exchanges' | 'claims') => {
         setModalType(type);
         setModalOpen(true);
         setListLoading(true);
@@ -75,6 +75,7 @@ const AdminPage = () => {
             if (type === 'finance') data = await api.getAdminFinanceList();
             if (type === 'listings') data = await api.getAdminListingsList();
             if (type === 'exchanges') data = await api.getAdminExchangesList();
+            if (type === 'claims') data = await api.getAdminClaimsList();
             setListData(data);
         } catch (e) {
             console.error(e);
@@ -160,7 +161,7 @@ const AdminPage = () => {
                 </div>
 
                 {/* ========================== MÓDULO 1: KPIs ========================== */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
                     <KpiCard
                         title="Usuarios Totales"
                         value={kpiData?.users?.total_users}
@@ -216,7 +217,7 @@ const AdminPage = () => {
                         value={kpiData?.operations?.total_claims || 0}
                         icon="⚠️"
                         color="red"
-                        onClick={() => { }}
+                        onClick={() => openListModal('claims')}
                     >
                         <div className="mt-3 pt-3 border-t border-red-100 text-xs text-gray-600">
                             Reportes generados en el periodo.
@@ -567,6 +568,7 @@ const DataTable = ({ type, data }: { type: string | null, data: any[] }) => {
     if (type === 'finance') columns = ['Fecha', 'Usuario', 'Tipo', 'Monto (Bs)', 'Ref'];
     if (type === 'listings') columns = ['Producto', 'Autor', 'Categoría', 'Créditos', 'Fecha'];
     if (type === 'exchanges') columns = ['Fecha', 'Producto', 'Comprador', 'Vendedor', 'Total'];
+    if (type === 'claims') columns = ['ID', 'Reportado Por', 'Publicación', 'Razón', 'Estado', 'Fecha'];
 
     return (
         <table className="w-full text-left border-collapse text-sm">
@@ -614,6 +616,28 @@ const DataTable = ({ type, data }: { type: string | null, data: any[] }) => {
                                 <td className="p-3 text-blue-600">{row.buyer}</td>
                                 <td className="p-3 text-orange-600">{row.seller}</td>
                                 <td className="p-3 font-bold text-green-600">{row.totalCredits}</td>
+                            </>
+                        )}
+                        {type === 'claims' && (
+                            <>
+                                <td className="p-3">#{row.id}</td>
+                                <td className="p-3 font-medium">{row.claimantName}</td>
+                                <td className="p-3">
+                                    {row.listingDetails ? (
+                                        <a href={`/listings/${row.listingDetails.id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                            {row.listingDetails.title}
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-400">N/A</span>
+                                    )}
+                                </td>
+                                <td className="p-3">{row.reason}</td>
+                                <td className="p-3">
+                                    <span className={`px-2 py-1 rounded text-xs font-bold ${row.status === 'abierto' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                        {row.status}
+                                    </span>
+                                </td>
+                                <td className="p-3 text-xs">{new Date(row.createdAt).toLocaleDateString()}</td>
                             </>
                         )}
                     </tr>
