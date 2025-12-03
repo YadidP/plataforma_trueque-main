@@ -206,3 +206,16 @@ export interface SubscriptionPlan {
   duration_days: number;
   description: string;
 }
+
+export interface Campaign {
+  id: number;
+  name: string;
+  type: 'discount' | 'gift';
+  startDate: string;
+  endDate: string;
+  status: 'active' | 'paused' | 'expired';
+  config: any;
+  entrepreneurId: number;
+  entrepreneurName: string;
+  items: string[]; // Títulos de los productos
+}

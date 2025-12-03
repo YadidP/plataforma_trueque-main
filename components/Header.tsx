@@ -28,6 +28,11 @@ const Header = () => {
             Explorar
           </Link>
 
+          {/* AÑADIR ESTE LINK */}
+          <Link to="/campaigns" className="text-green-100 hover:text-white font-medium transition-colors text-sm uppercase tracking-wide">
+            Ofertas
+          </Link>
+
           {isAuthenticated ? (
             <>
               <Link to="/dashboard" className="text-green-100 hover:text-white font-medium transition-colors text-sm uppercase tracking-wide">

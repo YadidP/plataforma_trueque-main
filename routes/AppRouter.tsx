@@ -19,6 +19,7 @@ import ClaimsPage from '../pages/ClaimsPage';
 import ResolveClaimPage from '../pages/ResolveClaimPage';
 import BannedPage from '../pages/BannedPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import CampaignsPage from '../pages/CampaignsPage'; // <--- Importación nueva
 
 const AppRouter = () => {
   return (
@@ -39,9 +40,11 @@ const AppRouter = () => {
         <Route path="listings/new" element={<CreateListingPage />} />
         <Route path="listings/edit/:id" element={<EditListingPage />} />
 
-        {/* RUTA FALTANTE QUE CAUSABA EL 404 */}
         <Route path="profile/:id" element={<ProfilePage />} />
         <Route path="claims/new" element={<ClaimsPage />} />
+
+        {/* NUEVA RUTA DE CAMPAÑAS */}
+        <Route path="campaigns" element={<CampaignsPage />} />
 
         <Route path="admin" element={<AdminPage />} />
         <Route path="admin/claims/:id/resolve" element={<ResolveClaimPage />} />
@@ -52,4 +55,4 @@ const AppRouter = () => {
   );
 };
 
-export default AppRouter;
+export default AppRouter; // <--- ¡ESTA LÍNEA ES LA QUE FALTABA!

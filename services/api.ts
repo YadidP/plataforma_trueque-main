@@ -250,3 +250,22 @@ export const getMySubscription = async (): Promise<any> => {
   const response = await http.get('/credits/my-subscription');
   return response.data;
 };
+
+export const createCampaign = async (data: any) => {
+  const response = await http.post('/campaigns', data);
+  return response.data;
+};
+export const getMyCampaigns = async () => {
+  const response = await http.get('/campaigns/my-campaigns');
+  return response.data;
+};
+
+// Añadir estos métodos exportados
+export const getActiveCampaigns = async (): Promise<Campaign[]> => {
+  const response = await http.get('/campaigns/active');
+  return response.data;
+};
+
+export const updateCampaign = async (id: number, data: Partial<Campaign>): Promise<void> => {
+  await http.patch(`/campaigns/${id}`, data);
+};

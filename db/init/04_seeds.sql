@@ -262,3 +262,68 @@ BEGIN
         (v_exchange_id, 'ENERGY', 'Energía Ahorrada', 'kWh', 1 * 50);
     END IF;
 END $$;
+
+-- 8. DATOS PARA CAMPAÑAS DE EMPRENDEDOR
+
+-- Crear usuario Emprendedor
+INSERT INTO users (name, email, password_hash, role, bio) VALUES
+('Tienda EcoTech', 'tienda@ecotech.com', '$2b$10$2W5loDxWqC4dC4tvNXNI4u.X/ytDg4jl0D43U07MkBeXmXjsu2hpG', 'emprendedor', 'Somos especialistas en reacondicionados.')
+ON CONFLICT (email) DO NOTHING;
+
+-- Crear Perfil
+INSERT INTO entrepreneur_profiles (user_id, business_name, validation_status) 
+VALUES ((SELECT id FROM users WHERE email='tienda@ecotech.com'), 'EcoTech Solutions', 'validado')
+ON CONFLICT (user_id) DO NOTHING;
+
+-- Crear stock para el emprendedor
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='tienda@ecotech.com'), 'Tablet Reacondicionada X', 'Tablet de 10 pulgadas, batería nueva.', 
+ (SELECT id FROM categories WHERE name='Electrónica'), (SELECT id FROM subcategories WHERE name='Tablets'),
+ (SELECT id FROM materials WHERE name='Electrónicos'), 10, 800, 'unidades', '/uploads/tablet.jpg', 'activa')
+ON CONFLICT (title, author_id) DO NOTHING;
+ 
+INSERT INTO listings (author_id, title, description, category_id, subcategory_id, material_id, quantity, unit_credits, unit_label, image_url, status) VALUES
+((SELECT id FROM users WHERE email='tienda@ecotech.com'), 'Funda Tablet Universal', 'Funda de neopreno reciclado.', 
+ (SELECT id FROM categories WHERE name='Electrónica'), (SELECT id FROM subcategories WHERE name='Tablets'),
+ (SELECT id FROM materials WHERE name='Textil Sintético'), 20, 50, 'unidades', '/uploads/funda.jpg', 'activa')
+ON CONFLICT (title, author_id) DO NOTHING;
+
+-- CAMPAÑA 1: Descuento del 20% en Tablets (Navidad Tech)
+INSERT INTO campaigns (entrepreneur_id, name, type, start_date, end_date, config)
+VALUES (
+    (SELECT id FROM users WHERE email='tienda@ecotech.com'),
+    'Navidad Tech',
+    'discount',
+    NOW() - INTERVAL '1 day',
+    NOW() + INTERVAL '30 days',
+    '{"discount_percent": 20}'
+)
+ON CONFLICT (entrepreneur_id, name) DO NOTHING;
+
+-- Asociar la Tablet a la campaña
+INSERT INTO campaign_items (campaign_id, listing_id, role)
+SELECT 
+    (SELECT id FROM campaigns WHERE name='Navidad Tech' AND entrepreneur_id = (SELECT id FROM users WHERE email='tienda@ecotech.com')),
+    (SELECT id FROM listings WHERE title='Tablet Reacondicionada X' AND author_id = (SELECT id FROM users WHERE email='tienda@ecotech.com')),
+    'target'
+ON CONFLICT (campaign_id, listing_id) DO NOTHING;
+
+-- CAMPAÑA 2: Regalo (Compra > 700 créditos y lleva Funda gratis)
+INSERT INTO campaigns (entrepreneur_id, name, type, start_date, end_date, config)
+VALUES (
+    (SELECT id FROM users WHERE email='tienda@ecotech.com'),
+    'Protege tu Tech',
+    'gift',
+    NOW() - INTERVAL '1 day',
+    NOW() + INTERVAL '30 days',
+    '{"min_amount": 700}'
+)
+ON CONFLICT (entrepreneur_id, name) DO NOTHING;
+
+-- Asociar la Funda como REGALO
+INSERT INTO campaign_items (campaign_id, listing_id, role)
+SELECT 
+    (SELECT id FROM campaigns WHERE name='Protege tu Tech' AND entrepreneur_id = (SELECT id FROM users WHERE email='tienda@ecotech.com')),
+    (SELECT id FROM listings WHERE title='Funda Tablet Universal' AND author_id = (SELECT id FROM users WHERE email='tienda@ecotech.com')),
+    'reward'
+ON CONFLICT (campaign_id, listing_id) DO NOTHING;

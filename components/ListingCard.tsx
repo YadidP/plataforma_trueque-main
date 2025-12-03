@@ -32,6 +32,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
           <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
             Stock: {listing.quantity}
           </div>
+          {listing.discountPercent > 0 && (
+              <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+                  -{listing.discountPercent}% OFF
+              </div>
+          )}
       </Link>
         
       <div className="p-4 flex flex-col flex-grow">
@@ -55,9 +60,16 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
           </div>
 
           <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-50">
-            <span className="text-xl font-extrabold text-green-600">
-              {listing.unitCredits} <span className="text-xs font-normal text-gray-400">créditos</span>
-            </span>
+              <div className="flex flex-col">
+                  {listing.originalPrice > listing.unitCredits && (
+                      <span className="text-xs text-gray-400 line-through decoration-red-500">
+                          {listing.originalPrice}
+                      </span>
+                  )}
+                  <span className="text-xl font-extrabold text-green-600">
+                      {listing.unitCredits} <span className="text-xs font-normal text-gray-400">créditos</span>
+                  </span>
+              </div>
             <Link 
                 to={`/listings/${listing.id}`}
                 className="text-xs font-bold text-green-700 bg-green-50 px-3 py-1.5 rounded-lg group-hover:bg-green-100 transition-colors"

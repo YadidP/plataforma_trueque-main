@@ -114,7 +114,8 @@ CREATE TABLE IF NOT EXISTS listings (
   unit_label VARCHAR(50),
   image_url VARCHAR(255),
   status VARCHAR(20) NOT NULL DEFAULT 'activa' CHECK (status IN ('activa','intercambiada','pausada', 'eliminada')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(title, author_id)
 );
 CREATE INDEX IF NOT EXISTS idx_listings_author_id ON listings(author_id);
 CREATE INDEX IF NOT EXISTS idx_listings_category_id ON listings(category_id);
@@ -225,3 +226,30 @@ CREATE TABLE IF NOT EXISTS reviews (
     UNIQUE(reviewer_id, exchange_id) -- Solo 1 reseña por intercambio
 );
 CREATE INDEX IF NOT EXISTS idx_reviews_target ON reviews(target_id);
+
+-- TABLAS PARA CAMPAÑAS COMERCIALES (EMPRENDEDORES)
+CREATE TABLE IF NOT EXISTS campaigns (
+    id SERIAL PRIMARY KEY,
+    entrepreneur_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(150) NOT NULL,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('discount', 'gift')), -- Tipos soportados
+    start_date TIMESTAMPTZ NOT NULL,
+    end_date TIMESTAMPTZ NOT NULL,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'paused', 'expired')),
+    config JSONB NOT NULL, -- Ej: {"discount_percent": 10} o {"min_amount": 500}
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(entrepreneur_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_campaigns_entrepreneur ON campaigns(entrepreneur_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_dates ON campaigns(start_date, end_date);
+
+CREATE TABLE IF NOT EXISTS campaign_items (
+    id SERIAL PRIMARY KEY,
+    campaign_id INT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    listing_id INT NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    role VARCHAR(20) DEFAULT 'target' CHECK (role IN ('target', 'reward')), -- target=producto con dcto, reward=producto regalo
+    UNIQUE(campaign_id, listing_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_campaign_items_listing ON campaign_items(listing_id);

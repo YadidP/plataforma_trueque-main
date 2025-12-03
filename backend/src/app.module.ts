@@ -18,6 +18,7 @@ import { MaterialsModule } from './materials/materials.module';
 import { ClaimsModule } from './claims/claims.module';
 import { AuthModule } from './auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule'; // <-- Added ScheduleModule import
+import { CampaignsModule } from './campaigns/campaigns.module'; // <-- Added CampaignsModule import
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ScheduleModule } from '@nestjs/schedule'; // <-- Added ScheduleModule i
     ImpactModule,
     MaterialsModule,
     ClaimsModule,
+    CampaignsModule, // <-- Added CampaignsModule
   ],
 })
 export class AppModule { }

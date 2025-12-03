@@ -71,7 +71,10 @@ export class ListingsService {
     const query = `
       SELECT
         l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
-        l.unit_credits as "unitCredits", l.quantity, l.unit_label as "unitLabel",
+        (SELECT final_price FROM get_active_listing_price(l.id)) as "unitCredits",
+        (SELECT original_price FROM get_active_listing_price(l.id)) as "originalPrice",
+        (SELECT discount_percent FROM get_active_listing_price(l.id)) as "discountPercent",
+        l.quantity, l.unit_label as "unitLabel",
         l.material_id as "materialId",
         l.category_id as "categoryId",
         l.created_at as "createdAt",
@@ -116,7 +119,10 @@ export class ListingsService {
     const query = `
       SELECT
         l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
-        l.unit_credits as "unitCredits", l.quantity, l.unit_label as "unitLabel",
+        (SELECT final_price FROM get_active_listing_price(l.id)) as "unitCredits",
+        (SELECT original_price FROM get_active_listing_price(l.id)) as "originalPrice",
+        (SELECT discount_percent FROM get_active_listing_price(l.id)) as "discountPercent",
+        l.quantity, l.unit_label as "unitLabel",
         l.quantity_range as "quantityRange", l.material_id as "materialId",
         l.created_at as "createdAt",
         u.name as author_name, u.id as author_id,
@@ -159,13 +165,16 @@ export class ListingsService {
   async findByAuthor(authorId: number) {
     const query = `
       SELECT
-        id, title, description, image_url as "imageUrl", status,
-        unit_credits as "unitCredits", quantity, unit_label as "unitLabel",
-        material_id as "materialId",
-        created_at as "createdAt"
-      FROM listings
-      WHERE author_id = $1
-      ORDER BY created_at DESC;
+        l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
+        (SELECT final_price FROM get_active_listing_price(l.id)) as "unitCredits",
+        (SELECT original_price FROM get_active_listing_price(l.id)) as "originalPrice",
+        (SELECT discount_percent FROM get_active_listing_price(l.id)) as "discountPercent",
+        l.quantity, l.unit_label as "unitLabel",
+        l.material_id as "materialId",
+        l.created_at as "createdAt"
+      FROM listings l
+      WHERE l.author_id = $1
+      ORDER BY l.created_at DESC;
     `;
     const result = await this.pgService.query(query, [authorId]);
     

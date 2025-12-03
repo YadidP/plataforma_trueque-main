@@ -68,6 +68,39 @@ $$;
 ALTER TABLE exchanges ADD COLUMN status VARCHAR(20) DEFAULT 'completado';
 ALTER TABLE exchanges ADD CONSTRAINT chk_exchange_status CHECK (status IN ('pendiente', 'completado', 'cancelado'));
 
+-- Función auxiliar para calcular precio con descuento activo
+CREATE OR REPLACE FUNCTION get_active_listing_price(p_listing_id INT)
+RETURNS TABLE (final_price NUMERIC, original_price NUMERIC, discount_percent INT, campaign_name VARCHAR) AS $$
+DECLARE
+    v_base_price NUMERIC;
+    v_campaign RECORD;
+BEGIN
+    SELECT unit_credits INTO v_base_price FROM listings WHERE id = p_listing_id;
+
+    -- Buscar campaña de descuento activa para este listing
+    SELECT c.name, (c.config->>'discount_percent')::INT as pct
+    INTO v_campaign
+    FROM campaigns c
+    JOIN campaign_items ci ON c.id = ci.campaign_id
+    WHERE ci.listing_id = p_listing_id
+      AND c.type = 'discount'
+      AND c.status = 'active'
+      AND NOW() BETWEEN c.start_date AND c.end_date
+    LIMIT 1;
+
+    IF FOUND THEN
+        RETURN QUERY SELECT 
+            ROUND(v_base_price * (1 - (v_campaign.pct::NUMERIC / 100)), 2), 
+            v_base_price, 
+            v_campaign.pct,
+            v_campaign.name;
+    ELSE
+        RETURN QUERY SELECT v_base_price, v_base_price, 0, NULL::VARCHAR;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ACTUALIZACIÓN DEL SP DE INTERCAMBIO PARA SOPORTAR CAMPAÑAS
 CREATE OR REPLACE PROCEDURE sp_registrar_intercambio(
   IN p_buyer_id INT,
   IN p_listing_id INT,
@@ -77,6 +110,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   v_unit NUMERIC;
+  v_final_unit NUMERIC;
   v_total NUMERIC;
   v_seller_id INT;
   v_status TEXT;
@@ -84,8 +118,14 @@ DECLARE
   v_exchange_id BIGINT;
   v_material_id INT;
   v_unit_label VARCHAR(50);
+  
+  -- Variables para campañas
+  v_discount_info RECORD;
+  v_gift_campaign RECORD;
+  v_gift_item_id INT;
+  v_gift_stock NUMERIC;
 BEGIN
-  -- Validaciones iniciales (igual que antes)
+  -- 1. Validaciones básicas
   IF p_quantity <= 0 THEN RAISE EXCEPTION 'Cantidad inválida'; END IF;
 
   SELECT author_id, unit_credits, status, material_id, unit_label
@@ -94,11 +134,14 @@ BEGIN
 
   IF v_seller_id IS NULL THEN RAISE EXCEPTION 'Publicación inexistente'; END IF;
   IF v_status <> 'activa' THEN RAISE EXCEPTION 'La publicación no está activa'; END IF;
-  IF v_seller_id = p_buyer_id THEN RAISE EXCEPTION 'El comprador no puede comprar su propia publicación'; END IF;
+  IF v_seller_id = p_buyer_id THEN RAISE EXCEPTION 'No puedes comprar tu propia publicación'; END IF;
 
-  v_total := v_unit * p_quantity;
+  -- 2. CALCULAR PRECIO CON DESCUENTO (Lógica Nueva)
+  SELECT * INTO v_discount_info FROM get_active_listing_price(p_listing_id);
+  v_final_unit := v_discount_info.final_price;
+  v_total := v_final_unit * p_quantity;
 
-  -- 1. DEBITAR AL COMPRADOR (Créditos retenidos por el sistema)
+  -- 3. DEBITAR AL COMPRADOR
   SELECT balance INTO v_balance FROM wallets WHERE user_id = p_buyer_id FOR UPDATE;
   IF v_balance < v_total THEN RAISE EXCEPTION 'Saldo insuficiente'; END IF;
 
@@ -107,23 +150,56 @@ BEGIN
   INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
   VALUES (p_buyer_id, 'intercambio_retenido', -v_total, v_balance, p_listing_id);
 
-  -- 2. NO ACREDITAR AL VENDEDOR AÚN (Se hará en la confirmación)
-
-  -- 3. REGISTRAR INTERCAMBIO CON ESTADO 'pendiente'
+  -- 4. REGISTRAR INTERCAMBIO PRINCIPAL
   INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, status)
-  VALUES (p_listing_id, p_buyer_id, v_seller_id, p_quantity, v_unit, v_total, 'pendiente')
+  VALUES (p_listing_id, p_buyer_id, v_seller_id, p_quantity, v_final_unit, v_total, 'pendiente')
   RETURNING id INTO v_exchange_id;
 
-  -- 4. Registrar impacto ambiental (igual que antes)
-  IF v_material_id IS NOT NULL AND v_unit_label IS NOT NULL THEN
+  -- 5. Impacto Ambiental
+  IF v_material_id IS NOT NULL THEN
     INSERT INTO exchange_impacts (exchange_id, metric_code, metric_name, metric_unit, impact_value)
     SELECT v_exchange_id, im.code, im.name, im.unit, (p_quantity / ie.base_quantity) * ie.impact_value
     FROM impact_equivalences ie JOIN impact_metrics im ON ie.metric_id = im.id
     WHERE ie.material_id = v_material_id AND ie.base_unit = v_unit_label;
   END IF;
-
-  -- 5. Marcar publicación como reservada/intercambiada
+  
+  -- Actualizar stock (simple, asumiendo listings unicos o decremento)
+  -- Para este ejemplo mantenemos la lógica original: status -> intercambiada si cantidad = 1
+  -- Si manejas stock real: UPDATE listings SET quantity = quantity - p_quantity ...
   UPDATE listings SET status = 'intercambiada' WHERE id = p_listing_id;
+
+  -- ==========================================================
+  -- 6. LÓGICA DE REGALO (GIFT WITH PURCHASE) (Nueva)
+  -- ==========================================================
+  -- Buscar si este emprendedor tiene una campaña de regalo activa que cumpla condiciones
+  SELECT c.id, (c.config->>'min_amount')::NUMERIC as min_amt
+  INTO v_gift_campaign
+  FROM campaigns c
+  WHERE c.entrepreneur_id = v_seller_id
+    AND c.type = 'gift'
+    AND c.status = 'active'
+    AND NOW() BETWEEN c.start_date AND c.end_date
+  LIMIT 1;
+
+  IF FOUND AND v_total >= v_gift_campaign.min_amt THEN
+      -- Buscar el item de recompensa
+      SELECT ci.listing_id, l.quantity 
+      INTO v_gift_item_id, v_gift_stock
+      FROM campaign_items ci
+      JOIN listings l ON ci.listing_id = l.id
+      WHERE ci.campaign_id = v_gift_campaign.id AND ci.role = 'reward' AND l.status = 'activa'
+      LIMIT 1;
+
+      IF v_gift_item_id IS NOT NULL THEN
+          -- Crear intercambio de regalo (costo 0)
+          INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, status)
+          VALUES (v_gift_item_id, p_buyer_id, v_seller_id, 1, 0, 0, 'pendiente');
+          
+          -- Marcar regalo como intercambiado
+          UPDATE listings SET status = 'intercambiada' WHERE id = v_gift_item_id;
+      END IF;
+  END IF;
+
 END;
 $$;
 

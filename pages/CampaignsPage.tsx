@@ -1,0 +1,79 @@
+import React, { useEffect, useState } from 'react';
+import * as api from '../services/api';
+import { Campaign } from '../types';
+import Spinner from '../components/Spinner';
+import CampaignCard from '../components/CampaignCard';
+import { useNotification } from '../hooks/useNotification';
+
+const CampaignsPage = () => {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { addNotification } = useNotification();
+
+  const fetchCampaigns = async () => {
+    setLoading(true);
+    try {
+      const data = await api.getActiveCampaigns();
+      setCampaigns(data);
+    } catch (error) {
+      console.error(error);
+      addNotification('Error al cargar campañas', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
+
+  const handleUpdateStatus = async (id: number, newStatus: string) => {
+    try {
+        await api.updateCampaign(id, { status: newStatus as any });
+        addNotification(`Campaña ${newStatus === 'active' ? 'activada' : 'pausada'} correctamente`, 'success');
+        // Actualización optimista local
+        setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: newStatus as any } : c));
+    } catch (error) {
+        addNotification('No se pudo actualizar el estado', 'error');
+    }
+  };
+
+  if (loading) return <Spinner />;
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-12">
+      {/* Hero Banner */}
+      <div className="bg-gradient-to-r from-purple-900 to-indigo-800 text-white py-12 px-4 shadow-lg mb-8">
+        <div className="max-w-7xl mx-auto text-center">
+            <span className="text-4xl mb-4 block">🎉</span>
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Campañas y Ofertas</h1>
+            <p className="text-purple-200 text-lg max-w-2xl mx-auto">
+                Descubre las mejores oportunidades de nuestros emprendedores. Descuentos exclusivos y regalos por tus intercambios.
+            </p>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4">
+        {campaigns.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {campaigns.map(camp => (
+                    <CampaignCard 
+                        key={camp.id} 
+                        campaign={camp} 
+                        onUpdateStatus={handleUpdateStatus} 
+                    />
+                ))}
+            </div>
+        ) : (
+            <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                <div className="text-5xl mb-4 opacity-30">🎈</div>
+                <h3 className="text-xl font-bold text-gray-400">No hay campañas activas en este momento</h3>
+                <p className="text-gray-400 mt-2">¡Vuelve pronto para ver nuevas ofertas!</p>
+            </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CampaignsPage;
