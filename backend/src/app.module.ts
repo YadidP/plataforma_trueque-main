@@ -1,4 +1,3 @@
-// backend/src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
@@ -18,10 +17,12 @@ import { ImpactModule } from './impact/impact.module';
 import { MaterialsModule } from './materials/materials.module';
 import { ClaimsModule } from './claims/claims.module';
 import { AuthModule } from './auth/auth.module';
+import { ScheduleModule } from '@nestjs/schedule'; // <-- Added ScheduleModule import
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ScheduleModule.forRoot(), // <-- Added ScheduleModule.forRoot()
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads/',

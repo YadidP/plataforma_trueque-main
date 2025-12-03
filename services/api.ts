@@ -149,6 +149,14 @@ export const getMyExchanges = async (): Promise<Exchange[]> => {
   return response.data;
 };
 
+export const confirmExchange = async (exchangeId: number): Promise<void> => {
+  await http.patch(`/exchanges/${exchangeId}/confirm`);
+};
+
+export const cancelExchange = async (exchangeId: number): Promise<void> => {
+  await http.patch(`/exchanges/${exchangeId}/cancel`);
+};
+
 export const getImpactMetrics = async (): Promise<ImpactMetrics> => {
   const response = await http.get('/reports/my-impact');
   return response.data;

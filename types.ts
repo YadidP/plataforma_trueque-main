@@ -88,6 +88,7 @@ export interface Exchange {
   quantity: number;
   totalCredits: number;
   date: string;
+  status: 'pendiente' | 'completado' | 'cancelado';
   impacts?: ImpactMetricResult[]; // Impacto ambiental generado
 }
 

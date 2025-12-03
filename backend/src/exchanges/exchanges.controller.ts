@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Req, Get, UseGuards, Param, Patch } from '@nestjs/common';
 import { ExchangesService } from './exchanges.service';
 import { CreateExchangeDto } from './dto/create-exchange.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -20,5 +20,17 @@ export class ExchangesController {
   findUserExchanges(@Req() req) {
     const userId = req.session.user.id;
     return this.exchangesService.findForUser(userId);
+  }
+
+  @Patch(':id/confirm')
+  confirm(@Param('id') id: string, @Req() req) {
+    const userId = req.session.user.id;
+    return this.exchangesService.confirmExchange(+id, userId);
+  }
+
+  @Patch(':id/cancel')
+  cancel(@Param('id') id: string, @Req() req) {
+    const userId = req.session.user.id;
+    return this.exchangesService.cancelExchange(+id, userId);
   }
 }

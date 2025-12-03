@@ -65,9 +65,9 @@ BEGIN
 END;
 $$;
 
--- Registrar intercambio (3 parámetros): buyer, listing, quantity
--- Deriva seller desde listings.author_id. Valida estado y auto-compra.
--- AHORA TAMBIÉN REGISTRA EL IMPACTO AMBIENTAL
+ALTER TABLE exchanges ADD COLUMN status VARCHAR(20) DEFAULT 'completado'; 
+ALTER TABLE exchanges ADD CONSTRAINT chk_exchange_status CHECK (status IN ('pendiente', 'completado', 'cancelado'));
+
 CREATE OR REPLACE PROCEDURE sp_registrar_intercambio(
   IN p_buyer_id INT,
   IN p_listing_id INT,
@@ -85,67 +85,116 @@ DECLARE
   v_material_id INT;
   v_unit_label VARCHAR(50);
 BEGIN
-  IF p_quantity <= 0 THEN
-    RAISE EXCEPTION 'Cantidad inválida';
-  END IF;
+  -- Validaciones iniciales (igual que antes)
+  IF p_quantity <= 0 THEN RAISE EXCEPTION 'Cantidad inválida'; END IF;
 
   SELECT author_id, unit_credits, status, material_id, unit_label
     INTO v_seller_id, v_unit, v_status, v_material_id, v_unit_label
-  FROM listings
-  WHERE id = p_listing_id
-  FOR UPDATE;
+  FROM listings WHERE id = p_listing_id FOR UPDATE;
 
-  IF v_seller_id IS NULL THEN
-    RAISE EXCEPTION 'Publicación inexistente';
-  END IF;
-
-  IF v_status <> 'activa' THEN
-    RAISE EXCEPTION 'La publicación no está activa';
-  END IF;
-
-  IF v_seller_id = p_buyer_id THEN
-    RAISE EXCEPTION 'El comprador no puede comprar su propia publicación';
-  END IF;
+  IF v_seller_id IS NULL THEN RAISE EXCEPTION 'Publicación inexistente'; END IF;
+  IF v_status <> 'activa' THEN RAISE EXCEPTION 'La publicación no está activa'; END IF;
+  IF v_seller_id = p_buyer_id THEN RAISE EXCEPTION 'El comprador no puede comprar su propia publicación'; END IF;
 
   v_total := v_unit * p_quantity;
 
-  -- Debitar comprador
+  -- 1. DEBITAR AL COMPRADOR (Créditos retenidos por el sistema)
   SELECT balance INTO v_balance FROM wallets WHERE user_id = p_buyer_id FOR UPDATE;
-  IF v_balance < v_total THEN
-    RAISE EXCEPTION 'Saldo insuficiente';
-  END IF;
+  IF v_balance < v_total THEN RAISE EXCEPTION 'Saldo insuficiente'; END IF;
+  
   UPDATE wallets SET balance = balance - v_total WHERE user_id = p_buyer_id RETURNING balance INTO v_balance;
+  
   INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
-  VALUES (p_buyer_id, 'intercambio_debito', -v_total, v_balance, p_listing_id);
+  VALUES (p_buyer_id, 'intercambio_retenido', -v_total, v_balance, p_listing_id);
 
-  -- Acreditar vendedor
-  SELECT balance INTO v_balance FROM wallets WHERE user_id = v_seller_id FOR UPDATE;
-  UPDATE wallets SET balance = balance + v_total WHERE user_id = v_seller_id RETURNING balance INTO v_balance;
-  INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
-  VALUES (v_seller_id, 'intercambio_credito', v_total, v_balance, p_listing_id);
+  -- 2. NO ACREDITAR AL VENDEDOR AÚN (Se hará en la confirmación)
 
-  -- Registrar intercambio
-  INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total)
-  VALUES (p_listing_id, p_buyer_id, v_seller_id, p_quantity, v_unit, v_total)
+  -- 3. REGISTRAR INTERCAMBIO CON ESTADO 'pendiente'
+  INSERT INTO exchanges (listing_id, buyer_id, seller_id, quantity, credits_per_unit, credits_total, status)
+  VALUES (p_listing_id, p_buyer_id, v_seller_id, p_quantity, v_unit, v_total, 'pendiente')
   RETURNING id INTO v_exchange_id;
 
-  -- NUEVO: Registrar impacto ambiental del intercambio
+  -- 4. Registrar impacto ambiental (igual que antes)
   IF v_material_id IS NOT NULL AND v_unit_label IS NOT NULL THEN
     INSERT INTO exchange_impacts (exchange_id, metric_code, metric_name, metric_unit, impact_value)
-    SELECT 
-      v_exchange_id,
-      im.code,
-      im.name,
-      im.unit,
-      (p_quantity / ie.base_quantity) * ie.impact_value
-    FROM impact_equivalences ie
-    JOIN impact_metrics im ON ie.metric_id = im.id
-    WHERE ie.material_id = v_material_id 
-      AND ie.base_unit = v_unit_label;
+    SELECT v_exchange_id, im.code, im.name, im.unit, (p_quantity / ie.base_quantity) * ie.impact_value
+    FROM impact_equivalences ie JOIN impact_metrics im ON ie.metric_id = im.id
+    WHERE ie.material_id = v_material_id AND ie.base_unit = v_unit_label;
   END IF;
 
-  -- Cerrar publicación
+  -- 5. Marcar publicación como reservada/intercambiada
   UPDATE listings SET status = 'intercambiada' WHERE id = p_listing_id;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE sp_confirmar_intercambio(
+  IN p_exchange_id BIGINT,
+  IN p_user_id INT -- El usuario que confirma (comprador)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_seller_id INT;
+  v_buyer_id INT;
+  v_total NUMERIC;
+  v_status VARCHAR;
+  v_balance NUMERIC;
+BEGIN
+  SELECT seller_id, buyer_id, credits_total, status 
+  INTO v_seller_id, v_buyer_id, v_total, v_status
+  FROM exchanges WHERE id = p_exchange_id FOR UPDATE;
+
+  -- Validaciones
+  IF v_status <> 'pendiente' THEN RAISE EXCEPTION 'El intercambio no está pendiente'; END IF;
+  
+  -- Permitir que el sistema (user_id 0 o NULL) o el comprador confirmen
+  IF p_user_id IS NOT NULL AND v_buyer_id <> p_user_id THEN 
+     RAISE EXCEPTION 'Solo el comprador puede confirmar la recepción'; 
+  END IF;
+
+  -- 1. ACREDITAR AL VENDEDOR
+  PERFORM ensure_wallet(v_seller_id);
+  UPDATE wallets SET balance = balance + v_total WHERE user_id = v_seller_id RETURNING balance INTO v_balance;
+  
+  INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
+  VALUES (v_seller_id, 'intercambio_completado', v_total, v_balance, p_exchange_id);
+
+  -- 2. ACTUALIZAR ESTADO
+  UPDATE exchanges SET status = 'completado' WHERE id = p_exchange_id;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE sp_cancelar_intercambio(
+  IN p_exchange_id BIGINT,
+  IN p_user_id INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_buyer_id INT;
+  v_listing_id INT;
+  v_total NUMERIC;
+  v_status VARCHAR;
+  v_balance NUMERIC;
+BEGIN
+  SELECT buyer_id, listing_id, credits_total, status 
+  INTO v_buyer_id, v_listing_id, v_total, v_status
+  FROM exchanges WHERE id = p_exchange_id FOR UPDATE;
+
+  IF v_status <> 'pendiente' THEN RAISE EXCEPTION 'El intercambio no está pendiente'; END IF;
+  IF v_buyer_id <> p_user_id THEN RAISE EXCEPTION 'Solo el comprador puede cancelar'; END IF;
+
+  -- 1. REEMBOLSAR AL COMPRADOR
+  UPDATE wallets SET balance = balance + v_total WHERE user_id = v_buyer_id RETURNING balance INTO v_balance;
+  
+  INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
+  VALUES (v_buyer_id, 'intercambio_reembolso', v_total, v_balance, p_exchange_id);
+
+  -- 2. REACTIVAR PUBLICACIÓN
+  UPDATE listings SET status = 'activa' WHERE id = v_listing_id;
+
+  -- 3. MARCAR COMO CANCELADO
+  UPDATE exchanges SET status = 'cancelado' WHERE id = p_exchange_id;
 END;
 $$;
 

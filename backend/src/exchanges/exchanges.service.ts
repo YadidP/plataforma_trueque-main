@@ -1,27 +1,24 @@
-import { Injectable, InternalServerErrorException, ConflictException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, ConflictException, NotFoundException } from '@nestjs/common';
 import { CreateExchangeDto } from './dto/create-exchange.dto';
-import { PgService } from 'src/database/pg.service'; // Import PgService
+import { PgService } from 'src/database/pg.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class ExchangesService {
-  constructor(
-    private readonly pgService: PgService, // Inject PgService
-  ) { }
+  constructor(private readonly pgService: PgService) { }
 
   async create(buyerId: number, createExchangeDto: CreateExchangeDto) {
     try {
-      // El trigger se encarga de toda la lógica atómica.
-      // Aquí solo llamamos al procedimiento que inserta en la tabla `exchanges`.
       await this.pgService.query(
         'CALL sp_registrar_intercambio($1, $2, $3)',
         [buyerId, createExchangeDto.listingId, createExchangeDto.quantity],
       );
 
-      // NUEVO: Obtener el último intercambio creado con su impacto
       const lastExchangeResult = await this.pgService.query(`
         SELECT 
           e.id,
           e.credits_total,
+          e.status,
           COALESCE(
             json_agg(
               json_build_object(
@@ -37,7 +34,7 @@ export class ExchangesService {
         LEFT JOIN exchange_impacts ei ON e.id = ei.exchange_id
         WHERE e.buyer_id = $1
           AND e.listing_id = $2
-        GROUP BY e.id, e.credits_total
+        GROUP BY e.id, e.credits_total, e.status
         ORDER BY e.exchange_date DESC
         LIMIT 1
       `, [buyerId, createExchangeDto.listingId]);
@@ -48,7 +45,6 @@ export class ExchangesService {
       };
     } catch (error: any) {
       console.error("Error al ejecutar sp_registrar_intercambio:", error);
-      // Capturar errores específicos de la base de datos (RAISE EXCEPTION)
       if (error.message.includes('Saldo insuficiente')) {
         throw new ConflictException('Saldo insuficiente para completar esta operación.');
       }
@@ -59,6 +55,45 @@ export class ExchangesService {
         throw new ConflictException('No puedes intercambiar tu propia publicación.');
       }
       throw new InternalServerErrorException('Ocurrió un error al procesar el intercambio.');
+    }
+  }
+
+  async confirmExchange(exchangeId: number, userId: number) {
+    try {
+      await this.pgService.query('CALL sp_confirmar_intercambio($1, $2)', [exchangeId, userId]);
+      return { message: 'Intercambio confirmado y fondos liberados.' };
+    } catch (error: any) {
+      throw new ConflictException(error.message || 'Error al confirmar');
+    }
+  }
+
+  async cancelExchange(exchangeId: number, userId: number) {
+    try {
+      await this.pgService.query('CALL sp_cancelar_intercambio($1, $2)', [exchangeId, userId]);
+      return { message: 'Intercambio cancelado y fondos reembolsados.' };
+    } catch (error: any) {
+      throw new ConflictException(error.message || 'Error al cancelar');
+    }
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async handleAutoConfirm() {
+    console.log('Ejecutando auto-confirmación de intercambios...');
+    
+    const query = `
+      SELECT id FROM exchanges 
+      WHERE status = 'pendiente' 
+      AND exchange_date < NOW() - INTERVAL '48 hours'
+    `;
+    const res = await this.pgService.query(query);
+    
+    for (const row of res.rows) {
+      try {
+        await this.pgService.query('CALL sp_confirmar_intercambio($1, NULL)', [row.id]);
+        console.log(`Intercambio ${row.id} auto-confirmado.`);
+      } catch (e) {
+        console.error(`Error auto-confirmando intercambio ${row.id}`, e);
+      }
     }
   }
 
@@ -75,6 +110,7 @@ export class ExchangesService {
         e.quantity,
         e.credits_total as "creditsTotal",
         e.exchange_date as "exchangeDate",
+        e.status,
         COALESCE(
             json_agg(
                 json_build_object(
@@ -92,12 +128,13 @@ export class ExchangesService {
       JOIN users us ON e.seller_id = us.id
       LEFT JOIN exchange_impacts ei ON e.id = ei.exchange_id
       WHERE e.buyer_id = $1 OR e.seller_id = $1
-      GROUP BY e.id, l.title, ub.name, us.name
-      ORDER BY e.exchange_date DESC;
+      GROUP BY e.id, l.title, ub.name, us.name, e.status
+      ORDER BY 
+        CASE WHEN e.status = 'pendiente' THEN 0 ELSE 1 END,
+        e.exchange_date DESC;
     `;
     const result = await this.pgService.query(query, [userId]);
 
-    // Mapeamos el resultado para que coincida con la interfaz `Exchange` del frontend
     return result.rows.map(ex => ({
       id: ex.id,
       listingId: ex.listingId,
@@ -109,6 +146,7 @@ export class ExchangesService {
       quantity: ex.quantity,
       totalCredits: Number(ex.creditsTotal),
       date: ex.exchangeDate.toISOString(),
+      status: ex.status,
       impacts: ex.impacts.map((impact: any) => ({ 
         code: impact.code,
         name: impact.name,
