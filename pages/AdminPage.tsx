@@ -568,7 +568,7 @@ const DataTable = ({ type, data }: { type: string | null, data: any[] }) => {
     if (type === 'finance') columns = ['Fecha', 'Usuario', 'Tipo', 'Monto (Bs)', 'Ref'];
     if (type === 'listings') columns = ['Producto', 'Autor', 'Categoría', 'Créditos', 'Fecha'];
     if (type === 'exchanges') columns = ['Fecha', 'Producto', 'Comprador', 'Vendedor', 'Total'];
-    if (type === 'claims') columns = ['ID', 'Reportado Por', 'Publicación', 'Razón', 'Estado', 'Fecha'];
+    if (type === 'claims') columns = ['ID', 'Reportado Por', 'Publicación', 'Autor', 'Razón', 'Estado', 'Fecha'];
 
     return (
         <table className="w-full text-left border-collapse text-sm">
@@ -621,11 +621,23 @@ const DataTable = ({ type, data }: { type: string | null, data: any[] }) => {
                         {type === 'claims' && (
                             <>
                                 <td className="p-3">#{row.id}</td>
-                                <td className="p-3 font-medium">{row.claimantName}</td>
+                                <td className="p-3">
+                                    <a href={`/users/${row.claimantId}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+                                        {row.claimantName}
+                                    </a>
+                                </td>
                                 <td className="p-3">
                                     {row.listingDetails ? (
                                         <a href={`/listings/${row.listingDetails.id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                                             {row.listingDetails.title}
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-400">N/A</span>
+                                    )}                                </td>
+                                <td className="p-3">
+                                    {row.listingDetails?.authorName ? (
+                                        <a href={`/users/profile/${row.listingId}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline font-medium">
+                                            {row.listingDetails.authorName}
                                         </a>
                                     ) : (
                                         <span className="text-gray-400">N/A</span>
