@@ -106,12 +106,30 @@ export class UsersService {
         }
     }
 
+    // 6. NUEVO: Publicaciones Activas del Usuario
+    // Reutilizamos lógica similar a findAll para que ListingCard funcione
+    const listingsRes = await this.pgService.query(`
+      SELECT
+        l.id, l.title, l.description, l.image_url as "imageUrl", l.status,
+        (SELECT final_price FROM get_active_listing_price(l.id)) as "unitCredits",
+        (SELECT original_price FROM get_active_listing_price(l.id)) as "originalPrice",
+        (SELECT discount_percent FROM get_active_listing_price(l.id)) as "discountPercent",
+        l.quantity, l.unit_label as "unitLabel",
+        l.created_at as "createdAt",
+        u.name as author_name, u.id as author_id
+      FROM listings l
+      JOIN users u ON l.author_id = u.id
+      WHERE l.author_id = $1 AND l.status = 'activa'
+      ORDER BY l.created_at DESC
+    `, [targetUserId]);
+
     return { 
         ...user, 
         stats: ratingRes.rows[0], 
         reviews: reviewsRes.rows, 
         impact: impactRes.rows,
-        pendingReviewExchangeId // <--- Devolvemos este ID al frontend
+        listings: listingsRes.rows, // <--- Retornamos listings
+        pendingReviewExchangeId
     };
   }
 

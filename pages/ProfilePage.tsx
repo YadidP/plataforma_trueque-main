@@ -4,6 +4,7 @@ import * as api from '../services/api';
 import Spinner from '../components/Spinner';
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../hooks/useNotification'; // Importar notificaciones
+import ListingCard from '../components/ListingCard'; // Importar
 
 const ProfilePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -93,6 +94,7 @@ const ProfilePage = () => {
   const reviewCount = profile.stats?.count ? Number(profile.stats.count) : 0;
   const impactData = profile.impact || [];
   const reviewsList = profile.reviews || [];
+  const listings = profile.listings || []; // Obtener listings del objeto profile
 
   return (
     <div className="max-w-5xl mx-auto p-4 pb-12 pt-8">
@@ -163,9 +165,23 @@ const ProfilePage = () => {
         </div>
       </div>
 
+      {/* NUEVA SECCIÓN: PUBLICACIONES ACTIVAS */}
+      {listings.length > 0 && (
+        <div className="mb-12 mt-8 animate-in slide-in-from-bottom duration-500">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-200 pb-2">
+                <span>📦</span> Publicaciones Activas
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {listings.map((item: any) => (
+                    // Reutilizamos ListingCard que ya tiene el Link interno al detalle
+                    <ListingCard key={item.id} listing={item} />
+                ))}
+            </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* 2. Sección de Impacto Ambiental */}
+         {/* 2. Sección de Impacto Ambiental */}
         <div className="lg:col-span-2">
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 h-full">
                 <h3 className="font-bold text-gray-800 mb-6 text-xl flex items-center gap-2">

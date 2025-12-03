@@ -3,12 +3,17 @@ import * as api from '../services/api';
 import { Campaign } from '../types';
 import Spinner from '../components/Spinner';
 import CampaignCard from '../components/CampaignCard';
+import CreateCampaignModal from '../components/CreateCampaignModal'; // Importar
 import { useNotification } from '../hooks/useNotification';
+import { useAuth } from '../hooks/useAuth'; // Importar auth
 
 const CampaignsPage = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false); // Estado modal
+  
   const { addNotification } = useNotification();
+  const { user } = useAuth(); // Obtener usuario para verificar rol
 
   const fetchCampaigns = async () => {
     setLoading(true);
@@ -31,25 +36,36 @@ const CampaignsPage = () => {
     try {
         await api.updateCampaign(id, { status: newStatus as any });
         addNotification(`Campaña ${newStatus === 'active' ? 'activada' : 'pausada'} correctamente`, 'success');
-        // Actualización optimista local
-        setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: newStatus as any } : c));
+        // Actualización optimista: Refrescar lista completa para asegurar consistencia
+        fetchCampaigns();
     } catch (error) {
         addNotification('No se pudo actualizar el estado', 'error');
     }
   };
 
+  const isEntrepreneur = user?.role === 'emprendedor' || user?.role === 'admin';
+
   if (loading) return <Spinner />;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-purple-900 to-indigo-800 text-white py-12 px-4 shadow-lg mb-8">
+      {/* Hero Banner con Botón Crear */}
+      <div className="bg-gradient-to-r from-purple-900 to-indigo-800 text-white py-12 px-4 shadow-lg mb-8 relative">
         <div className="max-w-7xl mx-auto text-center">
             <span className="text-4xl mb-4 block">🎉</span>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Campañas y Ofertas</h1>
-            <p className="text-purple-200 text-lg max-w-2xl mx-auto">
-                Descubre las mejores oportunidades de nuestros emprendedores. Descuentos exclusivos y regalos por tus intercambios.
+            <p className="text-purple-200 text-lg max-w-2xl mx-auto mb-6">
+                Descubre las mejores oportunidades de nuestros emprendedores.
             </p>
+            
+            {isEntrepreneur && (
+                <button 
+                    onClick={() => setShowModal(true)}
+                    className="bg-white text-purple-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-purple-50 transition transform hover:-translate-y-1"
+                >
+                    + Crear Nueva Oferta
+                </button>
+            )}
         </div>
       </div>
 
@@ -72,6 +88,17 @@ const CampaignsPage = () => {
             </div>
         )}
       </div>
+
+      {showModal && (
+        <CreateCampaignModal 
+            onClose={() => setShowModal(false)}
+            onSuccess={() => {
+                setShowModal(false);
+                addNotification("Campaña creada exitosamente", "success");
+                fetchCampaigns();
+            }}
+        />
+      )}
     </div>
   );
 };
