@@ -22,8 +22,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, []);
 
   const addNotification = useCallback((message: string, type: NotificationType) => {
-    const id = Date.now();
+    // CAMBIO: Añadimos Math.random() para asegurar unicidad incluso en el mismo milisegundo
+    const id = Date.now() + Math.random(); 
+    
     setNotifications(prev => [...prev, { id, message, type }]);
+    
     // Auto cerrar después de 5 segundos
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
