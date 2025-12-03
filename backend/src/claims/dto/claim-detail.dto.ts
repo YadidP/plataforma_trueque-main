@@ -21,5 +21,6 @@ export class ClaimDetailDto {
         id: number;
         title: string;
         authorName: string;
+        authorId: number; // <--- AGREGAR ESTA LÍNEA
     };
 }

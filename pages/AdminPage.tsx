@@ -3,7 +3,7 @@ import * as api from '../services/api';
 import Spinner from '../components/Spinner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     AreaChart, Area, BarChart, Bar, ComposedChart, LineChart, Line,
     PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
@@ -622,23 +622,38 @@ const DataTable = ({ type, data }: { type: string | null, data: any[] }) => {
                             <>
                                 <td className="p-3">#{row.id}</td>
                                 <td className="p-3">
-                                    <a href={`/users/${row.claimantId}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+                                    {/* CORRECCIÓN 1: Enlace al perfil del reclamante */}
+                                    <Link 
+                                        to={`/profile/${row.claimantId}`} 
+                                        target="_blank" 
+                                        className="text-blue-600 hover:underline font-medium"
+                                    >
                                         {row.claimantName}
-                                    </a>
+                                    </Link>
                                 </td>
                                 <td className="p-3">
                                     {row.listingDetails ? (
-                                        <a href={`/listings/${row.listingDetails.id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                        <Link 
+                                            to={`/listings/${row.listingDetails.id}`} 
+                                            target="_blank" 
+                                            className="text-blue-600 hover:underline"
+                                        >
                                             {row.listingDetails.title}
-                                        </a>
+                                        </Link>
                                     ) : (
                                         <span className="text-gray-400">N/A</span>
-                                    )}                                </td>
+                                    )}
+                                </td>
                                 <td className="p-3">
                                     {row.listingDetails?.authorName ? (
-                                        <a href={`/users/profile/${row.listingId}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline font-medium">
+                                        /* CORRECCIÓN 2: Enlace al perfil del autor usando authorId */
+                                        <Link 
+                                            to={`/profile/${row.listingDetails.authorId}`} 
+                                            target="_blank" 
+                                            className="text-purple-600 hover:underline font-medium"
+                                        >
                                             {row.listingDetails.authorName}
-                                        </a>
+                                        </Link>
                                     ) : (
                                         <span className="text-gray-400">N/A</span>
                                     )}

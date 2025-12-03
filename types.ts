@@ -182,6 +182,7 @@ export interface ClaimDetail {
     id: number;
     title: string;
     authorName: string;
+    authorId: number; // <--- AGREGAR AQUÍ
   };
 }
 

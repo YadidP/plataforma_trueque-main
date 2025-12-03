@@ -40,7 +40,7 @@ export class ClaimsService {
                 u.name as claimant_name,
                 e.id as exchange_id, l_e.title as exchange_listing_title,
                 ub.name as exchange_buyer_name, us.name as exchange_seller_name,
-                l.id as listing_id, l.title as listing_title, ua.name as listing_author_name
+                l.id as listing_id, l.title as listing_title, ua.name as listing_author_name, ua.id as listing_author_id
             FROM claims c
             JOIN users u ON c.claimant_id = u.id
             LEFT JOIN exchanges e ON c.exchange_id = e.id
@@ -64,7 +64,7 @@ export class ClaimsService {
                 u.name as claimant_name,
                 e.id as exchange_id, l_e.title as exchange_listing_title,
                 ub.name as exchange_buyer_name, us.name as exchange_seller_name,
-                l.id as listing_id, l.title as listing_title, ua.name as listing_author_name
+                l.id as listing_id, l.title as listing_title, ua.name as listing_author_name, ua.id as listing_author_id
             FROM claims c
             JOIN users u ON c.claimant_id = u.id
             LEFT JOIN exchanges e ON c.exchange_id = e.id
@@ -122,6 +122,7 @@ export class ClaimsService {
                 id: row.listing_id,
                 title: row.listing_title,
                 authorName: row.listing_author_name || 'Desconocido',
+                authorId: row.listing_author_id, // <--- AGREGAR ESTA LÍNEA
             };
         }
 
