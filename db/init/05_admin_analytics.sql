@@ -24,6 +24,8 @@ BEGIN
     FROM credit_purchases WHERE purchase_date::date BETWEEN p_start AND p_end;
 END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS fn_admin_kpi_operations(DATE, DATE);
+
 CREATE OR REPLACE FUNCTION fn_admin_kpi_operations(p_start DATE, p_end DATE)
 RETURNS TABLE (total_listings BIGINT, total_exchanges BIGINT, exchanged_volume BIGINT, total_claims BIGINT) AS $$
 BEGIN

@@ -65,7 +65,7 @@ BEGIN
 END;
 $$;
 
-ALTER TABLE exchanges ADD COLUMN status VARCHAR(20) DEFAULT 'completado'; 
+ALTER TABLE exchanges ADD COLUMN status VARCHAR(20) DEFAULT 'completado';
 ALTER TABLE exchanges ADD CONSTRAINT chk_exchange_status CHECK (status IN ('pendiente', 'completado', 'cancelado'));
 
 CREATE OR REPLACE PROCEDURE sp_registrar_intercambio(
@@ -101,9 +101,9 @@ BEGIN
   -- 1. DEBITAR AL COMPRADOR (Créditos retenidos por el sistema)
   SELECT balance INTO v_balance FROM wallets WHERE user_id = p_buyer_id FOR UPDATE;
   IF v_balance < v_total THEN RAISE EXCEPTION 'Saldo insuficiente'; END IF;
-  
+
   UPDATE wallets SET balance = balance - v_total WHERE user_id = p_buyer_id RETURNING balance INTO v_balance;
-  
+
   INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
   VALUES (p_buyer_id, 'intercambio_retenido', -v_total, v_balance, p_listing_id);
 
@@ -140,22 +140,22 @@ DECLARE
   v_status VARCHAR;
   v_balance NUMERIC;
 BEGIN
-  SELECT seller_id, buyer_id, credits_total, status 
+  SELECT seller_id, buyer_id, credits_total, status
   INTO v_seller_id, v_buyer_id, v_total, v_status
   FROM exchanges WHERE id = p_exchange_id FOR UPDATE;
 
   -- Validaciones
   IF v_status <> 'pendiente' THEN RAISE EXCEPTION 'El intercambio no está pendiente'; END IF;
-  
+
   -- Permitir que el sistema (user_id 0 o NULL) o el comprador confirmen
-  IF p_user_id IS NOT NULL AND v_buyer_id <> p_user_id THEN 
-     RAISE EXCEPTION 'Solo el comprador puede confirmar la recepción'; 
+  IF p_user_id IS NOT NULL AND v_buyer_id <> p_user_id THEN
+     RAISE EXCEPTION 'Solo el comprador puede confirmar la recepción';
   END IF;
 
   -- 1. ACREDITAR AL VENDEDOR
   PERFORM ensure_wallet(v_seller_id);
   UPDATE wallets SET balance = balance + v_total WHERE user_id = v_seller_id RETURNING balance INTO v_balance;
-  
+
   INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
   VALUES (v_seller_id, 'intercambio_completado', v_total, v_balance, p_exchange_id);
 
@@ -177,7 +177,7 @@ DECLARE
   v_status VARCHAR;
   v_balance NUMERIC;
 BEGIN
-  SELECT buyer_id, listing_id, credits_total, status 
+  SELECT buyer_id, listing_id, credits_total, status
   INTO v_buyer_id, v_listing_id, v_total, v_status
   FROM exchanges WHERE id = p_exchange_id FOR UPDATE;
 
@@ -186,7 +186,7 @@ BEGIN
 
   -- 1. REEMBOLSAR AL COMPRADOR
   UPDATE wallets SET balance = balance + v_total WHERE user_id = v_buyer_id RETURNING balance INTO v_balance;
-  
+
   INSERT INTO credits_log (user_id, operation_type, delta, balance_after, related_id)
   VALUES (v_buyer_id, 'intercambio_reembolso', v_total, v_balance, p_exchange_id);
 
@@ -224,6 +224,26 @@ BEGIN
         (SELECT COUNT(*) FROM user_activity WHERE last_activity::date < start_date) AS inactive_users;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 1. Actualizar KPI de Operaciones para separar Pendientes y Completados
+DROP FUNCTION IF EXISTS fn_admin_kpi_operations(DATE, DATE);
+
+CREATE OR REPLACE FUNCTION fn_admin_kpi_operations(p_start DATE, p_end DATE)
+RETURNS TABLE (
+    total_listings BIGINT,
+    total_exchanges_completed BIGINT, -- Número Grande (Solo completados)
+    total_exchanges_pending BIGINT,   -- Para mostrar abajo
+    exchanged_volume BIGINT,
+    total_claims BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY SELECT
+        (SELECT COUNT(*) FROM listings WHERE created_at::date BETWEEN p_start AND p_end),
+        (SELECT COUNT(*) FROM exchanges WHERE exchange_date::date BETWEEN p_start AND p_end AND status = 'completado'),
+        (SELECT COUNT(*) FROM exchanges WHERE exchange_date::date BETWEEN p_start AND p_end AND status = 'pendiente'),
+        (SELECT COALESCE(SUM(quantity), 0) FROM exchanges WHERE exchange_date::date BETWEEN p_start AND p_end AND status = 'completado'), -- Volumen solo de lo completado
+        (SELECT COUNT(*) FROM claims WHERE created_at::date BETWEEN p_start AND p_end);
+END; $$ LANGUAGE plpgsql;
 
 -- Función para el Reporte de Monetización (parametrizada)
 CREATE OR REPLACE FUNCTION fn_report_monetization(start_date DATE, end_date DATE)
@@ -279,6 +299,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 2. Actualizar Gráfico Oferta vs Demanda (Solo contar intercambios completados)
+CREATE OR REPLACE FUNCTION fn_chart_supply_demand(p_start DATE, p_end DATE)
+RETURNS TABLE (month_label TEXT, listings_count BIGINT, exchanges_count BIGINT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        TO_CHAR(d_month, 'YYYY-MM'),
+        (SELECT COUNT(*) FROM listings WHERE DATE_TRUNC('month', created_at) = d_month),
+        -- AQUI EL CAMBIO: Solo status = 'completado'
+        (SELECT COUNT(*) FROM exchanges WHERE DATE_TRUNC('month', exchange_date) = d_month AND status = 'completado')
+    FROM GENERATE_SERIES(DATE_TRUNC('month', p_start), DATE_TRUNC('month', p_end), '1 month'::interval) AS d_month;
+END; $$ LANGUAGE plpgsql;
+
 
 -- Contenido de 05_views.sql
 -- VISTA PARA REPORTES DE USUARIOS
@@ -329,7 +362,7 @@ SELECT
     -- Ingresos por venta de créditos
     (SELECT COALESCE(SUM(amount_bs), 0) FROM credit_purchases) AS total_revenue_credit_sales,
     (SELECT COALESCE(SUM(amount_bs), 0) FROM credit_purchases WHERE purchase_date >= NOW() - INTERVAL '30 days') AS revenue_credit_sales_last_30_days,
-    
+
     -- Ingresos por suscripciones (asumiendo que las tenemos)
     (SELECT COALESCE(SUM(s.price_bs), 0) FROM user_subscriptions us JOIN subscriptions s ON us.subscription_id = s.id) AS total_revenue_subscriptions,
     (SELECT COALESCE(SUM(s.price_bs), 0) FROM user_subscriptions us JOIN subscriptions s ON us.subscription_id = s.id WHERE us.start_date >= NOW() - INTERVAL '30 days') AS revenue_subscriptions_last_30_days,
@@ -342,23 +375,23 @@ SELECT
 
     -- Consumo de créditos
     (SELECT ABS(COALESCE(SUM(delta), 0)) FROM credits_log WHERE operation_type = 'intercambio_debito') AS credits_consumed_in_exchanges,
-    
+
     -- Adopción de suscripción premium
     (SELECT COUNT(*) FROM user_subscriptions WHERE is_active = TRUE) AS active_premium_users;
 
 
 -- VISTA PARA REPORTES DE IMPACTO AMBIENTAL
 CREATE OR REPLACE VIEW view_impact_reports AS
-SELECT 
+SELECT
     c.id AS category_id,
     c.name AS category_name,
     COUNT(DISTINCT l.id) AS total_listings,
     COUNT(DISTINCT e.id) AS total_exchanges,
     COALESCE(SUM(e.quantity), 0) AS total_items_exchanged,
     -- Ratio de publicación vs intercambio por categoría
-    CASE 
+    CASE
         WHEN COUNT(DISTINCT l.id) > 0 THEN (COUNT(DISTINCT e.id)::NUMERIC / COUNT(DISTINCT l.id)::NUMERIC)
-        ELSE 0 
+        ELSE 0
     END AS listing_to_exchange_ratio
 FROM categories c
 LEFT JOIN listings l ON c.id = l.category_id
@@ -388,19 +421,19 @@ BEGIN
         -- Usuarios Abandonos (Sin actividad en los ultimos 3 meses desde esa fecha)
         -- *Simplificación lógica para el reporte visual*
         (
-             SELECT COUNT(*) 
-             FROM users u2 
-             WHERE u2.created_at < dates.d 
+             SELECT COUNT(*)
+             FROM users u2
+             WHERE u2.created_at < dates.d
              AND NOT EXISTS (
-                SELECT 1 FROM credits_log cl 
-                WHERE cl.user_id = u2.id 
+                SELECT 1 FROM credits_log cl
+                WHERE cl.user_id = u2.id
                 AND cl.log_date BETWEEN dates.d - INTERVAL '3 months' AND dates.d
              )
         ) AS churned_users,
         -- Usuarios Activos (Con actividad en ese mes)
         (
-            SELECT COUNT(DISTINCT user_id) 
-            FROM credits_log cl 
+            SELECT COUNT(DISTINCT user_id)
+            FROM credits_log cl
             WHERE TO_CHAR(cl.log_date, 'YYYY-MM') = TO_CHAR(dates.d, 'YYYY-MM')
         ) AS active_users
     FROM

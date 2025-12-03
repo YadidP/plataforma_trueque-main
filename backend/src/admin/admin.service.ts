@@ -16,7 +16,8 @@ export class AdminService {
         return {
             users: usersRes.rows[0],
             revenue: revenueRes.rows[0],
-            operations: opsRes.rows[0] // Esto ahora incluirá 'total_claims' automáticamente desde la BD
+            // Esto ahora devolverá: total_exchanges_completed, total_exchanges_pending
+            operations: opsRes.rows[0] 
         };
     }
 
@@ -45,7 +46,14 @@ export class AdminService {
 
     async getExchangesList() {
         const query = `
-            SELECT e.id, l.title as product, ub.name as buyer, us.name as seller, e.credits_total as "totalCredits", e.exchange_date as "date"
+            SELECT 
+                e.id, 
+                l.title as product, 
+                ub.name as buyer, 
+                us.name as seller, 
+                e.credits_total as "totalCredits", 
+                e.exchange_date as "date",
+                e.status -- <--- AGREGAR ESTO
             FROM exchanges e
             JOIN listings l ON e.listing_id = l.id
             JOIN users ub ON e.buyer_id = ub.id

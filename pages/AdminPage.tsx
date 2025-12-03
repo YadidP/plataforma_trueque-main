@@ -201,14 +201,21 @@ const AdminPage = () => {
                     </KpiCard>
 
                     <KpiCard
-                        title="Intercambios"
-                        value={kpiData?.operations?.total_exchanges}
+                        title="Intercambios (Completados)"
+                        value={kpiData?.operations?.total_exchanges_completed} // Solo completados en grande
                         icon="🤝"
                         color="orange"
                         onClick={() => openListModal('exchanges')}
                     >
-                        <div className="mt-3 pt-3 border-t border-orange-100 text-xs text-gray-600">
-                            <div className="flex justify-between"><span>Volumen:</span> <span className="font-bold">{kpiData?.operations?.exchanged_volume} u.</span></div>
+                        <div className="mt-3 pt-3 border-t border-orange-100 text-xs text-gray-600 space-y-1">
+                            <div className="flex justify-between">
+                                <span>En Proceso (Pendientes):</span>
+                                <span className="font-bold text-blue-600">{kpiData?.operations?.total_exchanges_pending}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Volumen Transado:</span>
+                                <span className="font-bold">{kpiData?.operations?.exchanged_volume} u.</span>
+                            </div>
                         </div>
                     </KpiCard>
 
@@ -562,128 +569,157 @@ const KpiCard = ({ title, value, icon, color, children, onClick }: any) => {
 };
 
 const DataTable = ({ type, data }: { type: string | null, data: any[] }) => {
-    const navigate = useNavigate(); // <--- AGREGA ESTA LÍNEA
+    const navigate = useNavigate();
+    
+    // Estado local para el filtro de intercambios
+    const [exchangeFilter, setExchangeFilter] = React.useState<'todos' | 'pendiente' | 'completado'>('todos');
+
     if (!data || data.length === 0) return <p className="text-center text-gray-500">No hay datos para mostrar.</p>;
+
+    // Lógica de filtrado
+    let filteredData = data;
+    if (type === 'exchanges') {
+        filteredData = data.filter(item => {
+            if (exchangeFilter === 'todos') return true;
+            // Manejar 'completado' incluyendo 'cancelado' si deseas, o estricto
+            if (exchangeFilter === 'completado') return item.status === 'completado';
+            return item.status === exchangeFilter;
+        });
+    }
+
     let columns = [];
     if (type === 'users') columns = ['ID', 'Nombre', 'Email', 'Rol', 'Plan', 'Saldo', 'Registro'];
     if (type === 'finance') columns = ['Fecha', 'Usuario', 'Tipo', 'Monto (Bs)', 'Ref'];
     if (type === 'listings') columns = ['Producto', 'Autor', 'Categoría', 'Créditos', 'Fecha'];
-    if (type === 'exchanges') columns = ['Fecha', 'Producto', 'Comprador', 'Vendedor', 'Total'];
+    if (type === 'exchanges') columns = ['Fecha', 'Estado', 'Producto', 'Comprador', 'Vendedor', 'Total']; // Agregamos Estado
     if (type === 'claims') columns = ['ID', 'Reportado Por', 'Publicación', 'Autor', 'Razón', 'Estado', 'Fecha', 'Acciones'];
 
     return (
-        <table className="w-full text-left border-collapse text-sm">
-            <thead>
-                <tr className="bg-gray-100">
-                    {columns.map((col, i) => <th key={i} className="p-3 font-bold text-gray-600 border-b border-gray-200">{col}</th>)}
-                </tr>
-            </thead>
-            <tbody>
-                {data.map((row, i) => (
-                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
-                        {type === 'users' && (
-                            <>
-                                <td className="p-3">{row.id}</td>
-                                <td className="p-3 font-medium">{row.name}</td>
-                                <td className="p-3 text-gray-500">{row.email}</td>
-                                <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded text-xs">{row.role}</span></td>
-                                <td className="p-3">{row.plan_name}</td>
-                                <td className="p-3 font-bold text-green-600">{row.wallet_balance}</td>
-                                <td className="p-3 text-xs text-gray-400">{new Date(row.created_at).toLocaleDateString()}</td>
-                            </>
-                        )}
-                        {type === 'finance' && (
-                            <>
-                                <td className="p-3">{new Date(row.purchase_date).toLocaleDateString()}</td>
-                                <td className="p-3">{row.user_name}</td>
-                                <td className="p-3">{row.type}</td>
-                                <td className="p-3 font-bold">{row.amount_bs}</td>
-                                <td className="p-3 text-xs font-mono">{row.payment_ref}</td>
-                            </>
-                        )}
-                        {type === 'listings' && (
-                            <>
-                                <td className="p-3 font-medium">{row.title}</td>
-                                <td className="p-3">{row.author}</td>
-                                <td className="p-3">{row.category}</td>
-                                <td className="p-3">{row.unit_credits}</td>
-                                <td className="p-3 text-xs">{new Date(row.created_at).toLocaleDateString()}</td>
-                            </>
-                        )}
-                        {type === 'exchanges' && (
-                            <>
-                                <td className="p-3 text-xs">{new Date(row.date).toLocaleDateString()}</td>
-                                <td className="p-3 font-medium">{row.product}</td>
-                                <td className="p-3 text-blue-600">{row.buyer}</td>
-                                <td className="p-3 text-orange-600">{row.seller}</td>
-                                <td className="p-3 font-bold text-green-600">{row.totalCredits}</td>
-                            </>
-                        )}
-                        {type === 'claims' && (
-                            <>
-                                <td className="p-3">#{row.id}</td>
-                                <td className="p-3">
-                                    {/* CORRECCIÓN 1: Enlace al perfil del reclamante */}
-                                    <Link 
-                                        to={`/profile/${row.claimantId}`} 
-                                        target="_blank" 
-                                        className="text-blue-600 hover:underline font-medium"
-                                    >
-                                        {row.claimantName}
-                                    </Link>
-                                </td>
-                                <td className="p-3">
-                                    {row.listingDetails ? (
-                                        <Link 
-                                            to={`/listings/${row.listingDetails.id}`} 
-                                            target="_blank" 
-                                            className="text-blue-600 hover:underline"
-                                        >
-                                            {row.listingDetails.title}
-                                        </Link>
-                                    ) : (
-                                        <span className="text-gray-400">N/A</span>
-                                    )}
-                                </td>
-                                <td className="p-3">
-                                    {row.listingDetails?.authorName ? (
-                                        /* CORRECCIÓN 2: Enlace al perfil del autor usando authorId */
-                                        <Link 
-                                            to={`/profile/${row.listingDetails.authorId}`} 
-                                            target="_blank" 
-                                            className="text-purple-600 hover:underline font-medium"
-                                        >
-                                            {row.listingDetails.authorName}
-                                        </Link>
-                                    ) : (
-                                        <span className="text-gray-400">N/A</span>
-                                    )}
-                                </td>
-                                <td className="p-3">{row.reason}</td>
-                                <td className="p-3">
-                                    <span className={`px-2 py-1 rounded text-xs font-bold ${row.status === 'abierto' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                                        {row.status}
-                                    </span>
-                                </td>
-                                <td className="p-3 text-xs">{new Date(row.createdAt).toLocaleDateString()}</td>
-                                <td className="p-3">
-                                    {row.status === 'abierto' ? (
-                                        <button 
-                                            onClick={() => navigate(`/admin/claims/${row.id}/resolve`)}
-                                            className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700"
-                                        >
-                                            Resolver
-                                        </button>
-                                    ) : (
-                                        <span className="text-gray-400 text-xs italic">Resuelto</span>
-                                    )}
-                                </td>
-                            </>
-                        )}
+        <div>
+            {/* FILTRO SOLO PARA INTERCAMBIOS */}
+            {type === 'exchanges' && (
+                <div className="mb-4 flex gap-2">
+                    <button 
+                        onClick={() => setExchangeFilter('todos')}
+                        className={`px-3 py-1 rounded-lg text-sm font-bold border ${exchangeFilter === 'todos' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600'}`}
+                    >
+                        Todos
+                    </button>
+                    <button 
+                        onClick={() => setExchangeFilter('pendiente')}
+                        className={`px-3 py-1 rounded-lg text-sm font-bold border ${exchangeFilter === 'pendiente' ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}`}
+                    >
+                        En Proceso
+                    </button>
+                    <button 
+                        onClick={() => setExchangeFilter('completado')}
+                        className={`px-3 py-1 rounded-lg text-sm font-bold border ${exchangeFilter === 'completado' ? 'bg-green-600 text-white' : 'bg-white text-green-600'}`}
+                    >
+                        Completados
+                    </button>
+                </div>
+            )}
+
+            <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr className="bg-gray-100">
+                        {columns.map((col, i) => <th key={i} className="p-3 font-bold text-gray-600 border-b border-gray-200">{col}</th>)}
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {filteredData.map((row, i) => (
+                        <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                            {/* ... (Las otras filas users, finance, listings, claims se mantienen igual) ... */}
+                            {type === 'users' && (
+                                <>
+                                    <td className="p-3">{row.id}</td>
+                                    <td className="p-3 font-medium">{row.name}</td>
+                                    <td className="p-3 text-gray-500">{row.email}</td>
+                                    <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded text-xs">{row.role}</span></td>
+                                    <td className="p-3">{row.plan_name}</td>
+                                    <td className="p-3 font-bold text-green-600">{row.wallet_balance}</td>
+                                    <td className="p-3 text-xs text-gray-400">{new Date(row.created_at).toLocaleDateString()}</td>
+                                </>
+                            )}
+                            {type === 'finance' && (
+                                <>
+                                    <td className="p-3">{new Date(row.purchase_date).toLocaleDateString()}</td>
+                                    <td className="p-3">{row.user_name}</td>
+                                    <td className="p-3">{row.type}</td>
+                                    <td className="p-3 font-bold">{row.amount_bs}</td>
+                                    <td className="p-3 text-xs font-mono">{row.payment_ref}</td>
+                                </>
+                            )}
+                            {type === 'listings' && (
+                                <>
+                                    <td className="p-3 font-medium">{row.title}</td>
+                                    <td className="p-3">{row.author}</td>
+                                    <td className="p-3">{row.category}</td>
+                                    <td className="p-3">{row.unit_credits}</td>
+                                    <td className="p-3 text-xs">{new Date(row.created_at).toLocaleDateString()}</td>
+                                </>
+                            )}
+                            {/* MODIFICADO: Exchanges Row con Estado */}
+                            {type === 'exchanges' && (
+                                <>
+                                    <td className="p-3 text-xs">{new Date(row.date).toLocaleDateString()}</td>
+                                    <td className="p-3">
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            row.status === 'pendiente' ? 'bg-blue-100 text-blue-600' : 
+                                            row.status === 'completado' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'
+                                        }`}>
+                                            {row.status === 'pendiente' ? 'En Proceso' : row.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-3 font-medium">{row.product}</td>
+                                    <td className="p-3 text-blue-600">{row.buyer}</td>
+                                    <td className="p-3 text-orange-600">{row.seller}</td>
+                                    <td className="p-3 font-bold text-green-600">{row.totalCredits}</td>
+                                </>
+                            )}
+                            {type === 'claims' && (
+                                <>
+                                    <td className="p-3">#{row.id}</td>
+                                    <td className="p-3">
+                                        <Link to={`/profile/${row.claimantId}`} target="_blank" className="text-blue-600 hover:underline font-medium">
+                                            {row.claimantName}
+                                        </Link>
+                                    </td>
+                                    <td className="p-3">
+                                        {row.listingDetails ? (
+                                            <Link to={`/listings/${row.listingDetails.id}`} target="_blank" className="text-blue-600 hover:underline">
+                                                {row.listingDetails.title}
+                                            </Link>
+                                        ) : <span className="text-gray-400">N/A</span>}
+                                    </td>
+                                    <td className="p-3">
+                                        {row.listingDetails?.authorName ? (
+                                            <Link to={`/profile/${row.listingDetails.authorId}`} target="_blank" className="text-purple-600 hover:underline font-medium">
+                                                {row.listingDetails.authorName}
+                                            </Link>
+                                        ) : <span className="text-gray-400">N/A</span>}
+                                    </td>
+                                    <td className="p-3">{row.reason}</td>
+                                    <td className="p-3">
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${row.status === 'abierto' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                            {row.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-3 text-xs">{new Date(row.createdAt).toLocaleDateString()}</td>
+                                    <td className="p-3">
+                                        {row.status === 'abierto' ? (
+                                            <button onClick={() => navigate(`/admin/claims/${row.id}/resolve`)} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700">
+                                                Resolver
+                                            </button>
+                                        ) : <span className="text-gray-400 text-xs italic">Resuelto</span>}
+                                    </td>
+                                </>
+                            )}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 };
 
