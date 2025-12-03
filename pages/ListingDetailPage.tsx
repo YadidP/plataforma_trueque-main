@@ -162,7 +162,13 @@ const ListingDetailPage = () => {
 
             <h1 className="text-3xl font-extrabold text-gray-900 mt-3 mb-2 leading-tight">{listing.title}</h1>
             <p className="text-sm text-gray-500 mb-6 flex items-center gap-2">
-              Publicado por <span className="font-semibold text-gray-700 flex items-center gap-1">👤 {listing.author?.name}</span>
+              Publicado por{' '}
+              <Link 
+                to={`/profile/${listing.author?.id}`}
+                className="font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition-colors"
+              >
+                👤 {listing.author?.name}
+              </Link>
             </p>
 
             <p className="text-gray-700 text-lg leading-relaxed mb-6">{listing.description}</p>

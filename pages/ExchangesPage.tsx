@@ -13,7 +13,7 @@ const ExchangesPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'todos' | 'proceso' | 'completados'>('todos');
   
-  // Rating states (ya existían)
+  // Rating states
   const [ratingModal, setRatingModal] = useState<any>(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -34,7 +34,6 @@ const ExchangesPage = () => {
 
   useEffect(() => { fetchExchanges(); }, [fetchExchanges]);
 
-  // ACCIONES DE CONFIRMACIÓN / CANCELACIÓN
   const handleConfirm = async (id: number) => {
     if(!window.confirm("¿Confirmas que recibiste el producto? Los créditos se liberarán al vendedor.")) return;
     try {
@@ -70,7 +69,6 @@ const ExchangesPage = () => {
       setRatingModal(null);
       setRating(0);
       setComment('');
-      // Opcional: Refrescar la lista de intercambios o actualizar el estado para reflejar que ya se calificó
     } catch (error: any) {
       addNotification(error.response?.data?.message || 'Error al enviar calificación.', 'error');
     } finally {
@@ -78,7 +76,6 @@ const ExchangesPage = () => {
     }
   };
 
-  // Lógica de Filtrado
   const filteredExchanges = exchanges.filter(ex => {
     if (filter === 'proceso') return ex.status === 'pendiente';
     if (filter === 'completados') return ex.status === 'completado' || ex.status === 'cancelado';
@@ -95,11 +92,11 @@ const ExchangesPage = () => {
             <p className="text-gray-500 mt-1">Gestiona tus compras y ventas.</p>
         </div>
         
-        {/* FILTROS */}
+        {/* FILTROS ACTUALIZADOS */}
         <div className="bg-gray-100 p-1 rounded-xl flex">
             <button onClick={() => setFilter('todos')} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'todos' ? 'bg-white shadow text-green-700' : 'text-gray-500'}`}>Todos</button>
             <button onClick={() => setFilter('proceso')} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'proceso' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>En Proceso ⏳</button>
-            <button onClick={() => setFilter('completados')} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'completados' ? 'bg-white shadow text-gray-700' : 'text-gray-500'}`}>Historial</button>
+            <button onClick={() => setFilter('completados')} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'completados' ? 'bg-white shadow text-gray-700' : 'text-gray-500'}`}>Completados</button>
         </div>
       </div>
 
@@ -108,6 +105,9 @@ const ExchangesPage = () => {
           {filteredExchanges.map(ex => {
             const isBuyer = ex.buyerId === user?.id;
             const isPending = ex.status === 'pendiente';
+            // Identificar ID y nombre de la contraparte para el enlace
+            const partnerId = isBuyer ? ex.sellerId : ex.buyerId;
+            const partnerName = isBuyer ? ex.sellerName : ex.buyerName;
 
             return (
               <div key={ex.id} className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-center justify-between gap-4 ${isPending ? 'bg-blue-50 border-blue-200 shadow-md' : 'bg-white border-gray-100 shadow-sm'}`}>
@@ -129,24 +129,28 @@ const ExchangesPage = () => {
                     </div>
                 </div>
 
-                {/* Info Transacción */}
+                {/* Info Transacción CON ENLACE AL PERFIL */}
                 <div className="flex items-center justify-between w-full sm:w-auto gap-8">
-                    <div className="text-center sm:text-right">
-                        <p className="text-xs text-gray-400 uppercase font-bold">Contraparte</p>
-                        <span className="text-sm font-medium text-gray-700">
-                            {isBuyer ? ex.sellerName : ex.buyerName}
-                        </span>
+                    <div className="text-center sm:text-right flex flex-col items-center sm:items-end">
+                        <p className="text-xs text-gray-400 uppercase font-bold mb-1">Contraparte</p>
+                        <Link 
+                            to={`/profile/${partnerId}`} 
+                            className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors flex items-center gap-1"
+                            title="Ver perfil"
+                        >
+                            {partnerName} ↗
+                        </Link>
                     </div>
 
                     <div className="text-right min-w-[80px]">
-                        <p className="text-xs text-gray-400 uppercase font-bold">Total</p>
+                        <p className="text-xs text-gray-400 uppercase font-bold mb-1">Total</p>
                         <span className={`text-xl font-extrabold ${ex.status === 'cancelado' ? 'text-gray-400 line-through' : (isBuyer ? 'text-red-500' : 'text-green-500')}`}>
                             {isBuyer ? '-' : '+'}{ex.totalCredits}
                         </span>
                     </div>
                 </div>
 
-                {/* BOTONES DE ACCIÓN (Solo para Comprador en estado Pendiente) */}
+                {/* BOTONES DE ACCIÓN */}
                 {isBuyer && isPending && (
                     <div className="flex gap-2 w-full sm:w-auto justify-end">
                         <button 
@@ -164,14 +168,12 @@ const ExchangesPage = () => {
                     </div>
                 )}
                 
-                {/* Mensaje para el Vendedor si está pendiente */}
                 {!isBuyer && isPending && (
                      <div className="text-xs text-blue-600 font-medium bg-blue-100 px-3 py-1 rounded-lg">
-                        Esperando confirmación del comprador...
+                        Esperando confirmación...
                      </div>
                 )}
 
-                {/* Calificación (Solo si completado y comprado) */}
                 {isBuyer && ex.status === 'completado' && (
                     <button 
                         onClick={() => setRatingModal({ targetId: ex.sellerId, exchangeId: ex.id, name: ex.sellerName })}
@@ -190,7 +192,7 @@ const ExchangesPage = () => {
         </div>
       )}
 
-      {/* Modal de Rating (Mismo código que tenías) */}
+      {/* Modal de Rating */}
       {ratingModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
@@ -236,7 +238,7 @@ const ExchangesPage = () => {
                 </div>
             </div>
         </div>
-    )}
+      )}
     </div>
   );
 };

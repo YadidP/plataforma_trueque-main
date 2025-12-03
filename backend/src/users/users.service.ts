@@ -50,9 +50,9 @@ export class UsersService {
   }
 
   // New methods added to satisfy UsersController
-  async getPublicProfile(userId: number) {
+  async getPublicProfile(targetUserId: number, viewerId: number | null) {
     // 1. Datos básicos + Bio
-    const userRes = await this.pgService.query('SELECT id, name, email, role, bio, created_at FROM users WHERE id = $1', [userId]);
+    const userRes = await this.pgService.query('SELECT id, name, email, role, bio, created_at FROM users WHERE id = $1', [targetUserId]);
     const user = userRes.rows[0];
     if (!user) throw new NotFoundException('Usuario no encontrado');
 
@@ -63,13 +63,13 @@ export class UsersService {
             COUNT(*)::int as count 
         FROM reviews 
         WHERE target_id = $1
-    `, [userId]);
+    `, [targetUserId]);
     
     // 3. Reseñas recibidas
     const reviewsRes = await this.pgService.query(`
         SELECT r.rating, r.comment, r.created_at, u.name as reviewer_name 
         FROM reviews r JOIN users u ON r.reviewer_id = u.id 
-        WHERE r.target_id = $1 ORDER BY r.created_at DESC LIMIT 5`, [userId]);
+        WHERE r.target_id = $1 ORDER BY r.created_at DESC LIMIT 5`, [targetUserId]);
 
     // 4. Impacto ambiental acumulado (Consulta robusta)
     // Sumamos el impacto de todos los intercambios donde el usuario fue comprador O vendedor
@@ -83,13 +83,35 @@ export class UsersService {
         JOIN exchanges e ON ei.exchange_id = e.id
         WHERE e.seller_id = $1 OR e.buyer_id = $1
         GROUP BY ei.metric_name, ei.metric_code, ei.metric_unit
-    `, [userId]);
+    `, [targetUserId]);
+
+    // 5. NUEVO: Buscar si hay un intercambio pendiente de calificar por el viewer
+    let pendingReviewExchangeId = null;
+    if (viewerId && viewerId !== targetUserId) {
+        // Buscamos un intercambio completado entre ambos donde el viewer NO haya dejado reseña aún
+        const pendingRes = await this.pgService.query(`
+            SELECT e.id
+            FROM exchanges e
+            LEFT JOIN reviews r ON e.id = r.exchange_id AND r.reviewer_id = $1
+            WHERE 
+                ( (e.buyer_id = $1 AND e.seller_id = $2) OR (e.seller_id = $1 AND e.buyer_id = $2) )
+                AND e.status = 'completado'
+                AND r.id IS NULL
+            ORDER BY e.exchange_date DESC
+            LIMIT 1
+        `, [viewerId, targetUserId]);
+        
+        if (pendingRes.rows.length > 0) {
+            pendingReviewExchangeId = pendingRes.rows[0].id;
+        }
+    }
 
     return { 
         ...user, 
         stats: ratingRes.rows[0], 
         reviews: reviewsRes.rows, 
-        impact: impactRes.rows 
+        impact: impactRes.rows,
+        pendingReviewExchangeId // <--- Devolvemos este ID al frontend
     };
   }
 

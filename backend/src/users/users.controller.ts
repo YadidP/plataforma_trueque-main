@@ -8,8 +8,10 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('profile/:id')
-  getProfile(@Param('id') id: string) {
-    return this.usersService.getPublicProfile(+id);
+  getProfile(@Param('id') id: string, @Req() req) {
+    // Obtenemos el ID del usuario que visita (si está logueado)
+    const viewerId = req.session?.user?.id || null;
+    return this.usersService.getPublicProfile(+id, viewerId);
   }
 
   @Put('profile')
