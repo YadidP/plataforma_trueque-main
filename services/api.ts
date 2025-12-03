@@ -210,6 +210,17 @@ export const getAdminClaimsList = async () => {
   return response.data;
 };
 
+// Añadir al final o en la sección de Claims
+export const getClaimById = async (id: number) => {
+    const response = await http.get(`/claims/${id}`);
+    return response.data;
+};
+
+export const resolveClaim = async (id: number, data: any) => {
+    const response = await http.post(`/claims/${id}/resolve`, data);
+    return response.data;
+};
+
 // --- USER PROFILES & REVIEWS ---
 export const getUserProfile = async (id: number): Promise<any> => {
   const response = await http.get(`/users/profile/${id}`);

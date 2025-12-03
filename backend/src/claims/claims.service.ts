@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PgService } from 'src/database/pg.service'; // Import PgService
 import { CreateClaimDto } from './dto/create-claim.dto';
+import { ProcessClaimDto } from './dto/process-claim.dto';
 import { ClaimDetailDto } from './dto/claim-detail.dto'; // Assuming this DTO is still needed for output structure
 
 @Injectable()
@@ -127,5 +128,81 @@ export class ClaimsService {
         }
 
         return dto;
+    }
+
+    async getClaimById(id: number) {
+        const query = `
+            SELECT 
+                c.*, 
+                l.title as listing_title, 
+                l.author_id as listing_author_id,
+                u.name as claimant_name,
+                ua.name as author_name,
+                ua.email as author_email
+            FROM claims c
+            LEFT JOIN listings l ON c.listing_id = l.id
+            LEFT JOIN users u ON c.claimant_id = u.id
+            LEFT JOIN users ua ON l.author_id = ua.id
+            WHERE c.id = $1
+        `;
+        const res = await this.pgService.query(query, [id]);
+        return res.rows[0];
+    }
+
+    async processClaim(claimId: number, dto: ProcessClaimDto) {
+        // 1. Obtener datos del reclamo
+        const claim = await this.getClaimById(claimId);
+        if (!claim) throw new NotFoundException('Reclamo no encontrado');
+
+        const client = await this.pgService['pool'].connect(); // Acceso directo al pool para transacción
+        
+        try {
+            await client.query('BEGIN');
+
+            // 2. Eliminar Publicación (Marcar como eliminada)
+            if (dto.deleteListing && claim.listing_id) {
+                await client.query(
+                    `UPDATE listings SET status = 'eliminada' WHERE id = $1`,
+                    [claim.listing_id]
+                );
+            }
+
+            // 3. Banear Usuario
+            if (dto.banType !== 'none' && claim.listing_author_id) {
+                let banDate = null;
+                const now = new Date();
+
+                if (dto.banType === '7days') {
+                    now.setDate(now.getDate() + 7);
+                    banDate = now;
+                } else if (dto.banType === 'permanent') {
+                    now.setFullYear(now.getFullYear() + 100); // Año 2100+
+                    banDate = now;
+                } else if (dto.banType === 'custom' && dto.banUntil) {
+                    banDate = new Date(dto.banUntil);
+                }
+
+                if (banDate) {
+                    await client.query(
+                        `UPDATE users SET banned_until = $1, ban_reason = $2 WHERE id = $3`,
+                        [banDate, dto.adminNotes, claim.listing_author_id]
+                    );
+                }
+            }
+
+            // 4. Cerrar Reclamo
+            await client.query(
+                `UPDATE claims SET status = 'resuelto', resolved_at = NOW() WHERE id = $1`,
+                [claimId]
+            );
+
+            await client.query('COMMIT');
+            return { success: true };
+        } catch (e) {
+            await client.query('ROLLBACK');
+            throw e;
+        } finally {
+            client.release();
+        }
     }
 }

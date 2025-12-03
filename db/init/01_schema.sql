@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS users (
   role VARCHAR(20) NOT NULL DEFAULT 'usuario' CHECK (role IN ('usuario','emprendedor','ong','admin')),
   bio TEXT, -- NUEVO CAMPO
   created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  banned_until TIMESTAMPTZ DEFAULT NULL,
+  ban_reason TEXT DEFAULT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
@@ -111,7 +113,7 @@ CREATE TABLE IF NOT EXISTS listings (
   unit_credits NUMERIC(10,2) NOT NULL,
   unit_label VARCHAR(50),
   image_url VARCHAR(255),
-  status VARCHAR(20) NOT NULL DEFAULT 'activa' CHECK (status IN ('activa','intercambiada','pausada')),
+  status VARCHAR(20) NOT NULL DEFAULT 'activa' CHECK (status IN ('activa','intercambiada','pausada', 'eliminada')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_listings_author_id ON listings(author_id);

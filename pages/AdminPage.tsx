@@ -562,13 +562,14 @@ const KpiCard = ({ title, value, icon, color, children, onClick }: any) => {
 };
 
 const DataTable = ({ type, data }: { type: string | null, data: any[] }) => {
+    const navigate = useNavigate(); // <--- AGREGA ESTA LÍNEA
     if (!data || data.length === 0) return <p className="text-center text-gray-500">No hay datos para mostrar.</p>;
     let columns = [];
     if (type === 'users') columns = ['ID', 'Nombre', 'Email', 'Rol', 'Plan', 'Saldo', 'Registro'];
     if (type === 'finance') columns = ['Fecha', 'Usuario', 'Tipo', 'Monto (Bs)', 'Ref'];
     if (type === 'listings') columns = ['Producto', 'Autor', 'Categoría', 'Créditos', 'Fecha'];
     if (type === 'exchanges') columns = ['Fecha', 'Producto', 'Comprador', 'Vendedor', 'Total'];
-    if (type === 'claims') columns = ['ID', 'Reportado Por', 'Publicación', 'Autor', 'Razón', 'Estado', 'Fecha'];
+    if (type === 'claims') columns = ['ID', 'Reportado Por', 'Publicación', 'Autor', 'Razón', 'Estado', 'Fecha', 'Acciones'];
 
     return (
         <table className="w-full text-left border-collapse text-sm">
@@ -665,6 +666,18 @@ const DataTable = ({ type, data }: { type: string | null, data: any[] }) => {
                                     </span>
                                 </td>
                                 <td className="p-3 text-xs">{new Date(row.createdAt).toLocaleDateString()}</td>
+                                <td className="p-3">
+                                    {row.status === 'abierto' ? (
+                                        <button 
+                                            onClick={() => navigate(`/admin/claims/${row.id}/resolve`)}
+                                            className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700"
+                                        >
+                                            Resolver
+                                        </button>
+                                    ) : (
+                                        <span className="text-gray-400 text-xs italic">Resuelto</span>
+                                    )}
+                                </td>
                             </>
                         )}
                     </tr>

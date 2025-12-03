@@ -16,6 +16,8 @@ import ExchangesPage from '../pages/ExchangesPage';
 import AdminPage from '../pages/AdminPage';
 import ProfilePage from '../pages/ProfilePage';
 import ClaimsPage from '../pages/ClaimsPage';
+import ResolveClaimPage from '../pages/ResolveClaimPage';
+import BannedPage from '../pages/BannedPage';
 import NotFoundPage from '../pages/NotFoundPage';
 
 const AppRouter = () => {
@@ -42,6 +44,8 @@ const AppRouter = () => {
         <Route path="claims/new" element={<ClaimsPage />} />
 
         <Route path="admin" element={<AdminPage />} />
+        <Route path="admin/claims/:id/resolve" element={<ResolveClaimPage />} />
+        <Route path="banned" element={<BannedPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

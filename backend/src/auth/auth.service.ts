@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -44,7 +44,7 @@ export class AuthService {
 
     async login(email: string, password: string) {
         const result = await this.pgService.query(
-            'SELECT id, name, email, password_hash, role FROM users WHERE email = $1',
+            'SELECT id, name, email, password_hash, role, banned_until, ban_reason FROM users WHERE email = $1',
             [email]
         );
         const user = result.rows[0];
@@ -52,6 +52,16 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
+
+        // --- NUEVA LÓGICA DE BANEO ---
+        if (user.banned_until && new Date(user.banned_until) > new Date()) {
+            throw new ForbiddenException({
+                message: 'Cuenta suspendida',
+                reason: user.ban_reason,
+                until: user.banned_until
+            });
+        }
+        // -----------------------------
 
         const isPasswordValid = await bcrypt.compare(password, user.password_hash);
         if (!isPasswordValid) {

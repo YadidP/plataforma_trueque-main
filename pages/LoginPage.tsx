@@ -22,7 +22,17 @@ const LoginPage = () => {
             addNotification('Sesión iniciada correctamente', 'success');
             navigate('/dashboard');
         } catch (error: any) {
-            addNotification(error.response?.data?.message || 'Error al iniciar sesión', 'error');
+            // Manejo específico para baneo (403 Forbidden)
+            if (error.response && error.response.status === 403 && error.response.data.until) {
+                navigate('/banned', { 
+                    state: { 
+                        reason: error.response.data.reason, 
+                        until: error.response.data.until 
+                    } 
+                });
+            } else {
+                addNotification(error.response?.data?.message || 'Error al iniciar sesión', 'error');
+            }
         } finally {
             setLoading(false);
         }

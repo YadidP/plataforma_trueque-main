@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { ClaimsService } from './claims.service';
 import { CreateClaimDto } from './dto/create-claim.dto';
+import { ProcessClaimDto } from './dto/process-claim.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
 
@@ -34,5 +35,17 @@ export class ClaimsController {
     @ApiOperation({ summary: 'Resolve a claim (Admin only - now public)' })
     resolve(@Param('id') id: string) {
         return this.claimsService.resolveClaim(+id);
+    }
+
+    @Get(':id')
+    @UseGuards(AuthenticatedGuard)
+    getOne( @Param('id') id: string) {
+        return this.claimsService.getClaimById(+id);
+    }
+
+    @Post(':id/resolve')
+    @UseGuards(AuthenticatedGuard) // Asegúrate de que solo admin pueda, aquí simplificado
+    process( @Param('id') id: string, @Body() dto: ProcessClaimDto) {
+        return this.claimsService.processClaim(+id, dto);
     }
 }
