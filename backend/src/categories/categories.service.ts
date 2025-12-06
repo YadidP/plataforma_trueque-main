@@ -54,4 +54,15 @@ export class CategoriesService {
     }
     return category;
   }
+
+  // --- NUEVO MÉTODO ---
+  async create(name: string) {
+    const query = 'INSERT INTO categories (name) VALUES ($1) RETURNING *';
+    try {
+      const res = await this.pgService.query(query, [name]);
+      return res.rows[0];
+    } catch (e) {
+      throw new Error('Error creando categoría (posible duplicado)');
+    }
+  }
 }

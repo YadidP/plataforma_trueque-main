@@ -269,3 +269,18 @@ export const getActiveCampaigns = async (): Promise<Campaign[]> => {
 export const updateCampaign = async (id: number, data: Partial<Campaign>): Promise<void> => {
   await http.patch(`/campaigns/${id}`, data);
 };
+
+export const createCategory = async (name: string) => {
+  const response = await http.post('/categories', { name });
+  return response.data;
+};
+
+export const createSubcategory = async (name: string, categoryId: number) => {
+  const response = await http.post('/subcategories', { name, categoryId });
+  return response.data;
+};
+
+export const createMaterial = async (name: string) => {
+  const response = await http.post('/materials', { name });
+  return response.data;
+};

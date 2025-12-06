@@ -37,4 +37,15 @@ export class SubcategoriesService {
     }
     return result.rows;
   }
+
+  // --- NUEVO MÉTODO ---
+  async create(name: string, categoryId: number) {
+    const query = 'INSERT INTO subcategories (name, category_id) VALUES ($1, $2) RETURNING *';
+    try {
+      const res = await this.pgService.query(query, [name, categoryId]);
+      return res.rows[0];
+    } catch (e) {
+      throw new Error('Error creando subcategoría');
+    }
+  }
 }

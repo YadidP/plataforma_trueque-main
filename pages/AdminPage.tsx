@@ -9,6 +9,7 @@ import {
     PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import CatalogManager from '../components/CatalogManager';
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -515,6 +516,17 @@ const AdminPage = () => {
                             </p>
                         </div>
                     </div>
+                </div>
+                
+                {/* ========================== MÓDULO 5: GESTIÓN DE CATÁLOGO ========================== */}
+                <div className="mb-20">
+                    <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <span className="bg-gray-100 text-gray-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">5</span>
+                            Gestor de Categorías y Materiales
+                        </h2>
+                    </div>
+                    <CatalogManager />
                 </div>
 
             </div>
